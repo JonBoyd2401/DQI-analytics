@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import { dqiAuditModel, generateWidget, refineWidget, runAnalytics, SyntheticConnector } from '@dqi/analytics-core';
+import { dqiAuditModel, dqiDemoCatalogue, generateWidget, refineWidget, runAnalytics, semanticCatalogue, SyntheticConnector } from '@dqi/analytics-core';
 
 export function buildApp() {
   const app = Fastify({ logger: true, bodyLimit: 32_768 });
@@ -8,9 +8,15 @@ export function buildApp() {
   app.get('/health', async () => ({ status: 'ok', aiRequired: false }));
   app.get('/api/v1/semantic-model', async () => dqiAuditModel);
   app.get('/api/v1/demo/catalogue', async () => ({
-    metrics: ['AI usage events', 'Passed events', 'Pass rate', 'Blocked events', 'Blocked rate', 'Events requiring review', 'DQI Enforce policy hits', 'EU AI Act control finding rate', 'Assessment pass rate', 'High-risk AI events', 'Ungrounded response rate', 'Integration error rate'],
-    dimensions: ['Integration', 'Model', 'Environment', 'DQI Enforce policy', 'Decision', 'Severity', 'Overall'],
-    policies: ['Prompt Injection Shield', 'PII & Data Leakage', 'EU AI Act High-Risk Use', 'Grounding & Citation', 'Toxicity & Harm', 'Model Allowlist'],
+    semanticEngine: semanticCatalogue.engine,
+    metrics: Object.values(semanticCatalogue.metrics).map((metric) => metric.label),
+    dimensions: Object.values(semanticCatalogue.dimensions).map((dimension) => dimension.label),
+    integrations: dqiDemoCatalogue.integrations,
+    policies: dqiDemoCatalogue.policies,
+    controls: dqiDemoCatalogue.controls,
+    regulations: dqiDemoCatalogue.regulations,
+    regions: dqiDemoCatalogue.regions,
+    businessUnits: dqiDemoCatalogue.businessUnits,
     visuals: ['Line', 'Area', 'Bar', 'Donut', 'KPI scorecard'],
     palettes: ['Aurora', 'Ocean', 'Sunset', 'Mono']
   }));

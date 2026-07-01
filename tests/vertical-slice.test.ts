@@ -42,8 +42,9 @@ describe('natural-language DQI audit widgets', () => {
     expect(result.widget.dimension.id).toBe('dimension.model');
     expect(result.widget.visual.chartType).toBe('area');
     expect(result.query.semanticPlan.policyPack).toBe('eu-ai-act-2024-1689');
-    expect(result.series).toHaveLength(4);
-    expect(result.provenance.recordsScanned).toBe(26208);
+    expect(result.series).toHaveLength(6);
+    expect(result.provenance.recordsScanned).toBe(112320);
+    expect(result.semanticEngine.modelId).toBe('JonBoyd2401/Qwen3.6');
   });
 
   it('understands decision comparisons and named governance filters', () => {
@@ -74,5 +75,26 @@ describe('natural-language DQI audit widgets', () => {
     expect(refined.widget.filters).toEqual(original.widget.filters);
     expect(refined.widget.visual).toMatchObject({ chartType: 'bar', palette: 'sunset', legendPosition: 'right', xAxisPosition: 'top', xAxisLabelRotation: 45, showGrid: false, showPoints: false });
     expect(refined.series).toEqual(original.series);
+  });
+
+  it('understands expanded governance catalogue prompts', () => {
+    const drift = generateWidget({ prompt: 'Trend model drift score for Qwen 3.6 by business unit over the last 26 weeks with a dark line chart' }, now);
+    expect(drift.widget.metric.id).toBe('metric.model_drift_score');
+    expect(drift.widget.dimension.id).toBe('dimension.business_unit');
+    expect(drift.widget.filters).toEqual(expect.arrayContaining([{ field: 'model', operator: 'equals', value: 'Qwen 3.6' }]));
+
+    const evidence = generateWidget({ prompt: 'Show evidence completeness for EU AI Act by regulation in the EU region as a light KPI' }, now);
+    expect(evidence.widget.metric.id).toBe('metric.evidence_completeness_rate');
+    expect(evidence.widget.dimension.id).toBe('dimension.regulation');
+    expect(evidence.query.semanticPlan.intent).toBe('coverage_report');
+    expect(evidence.widget.filters).toEqual(expect.arrayContaining([
+      { field: 'region', operator: 'equals', value: 'EU' },
+      { field: 'regulation', operator: 'equals', value: 'EU AI Act' }
+    ]));
+
+    const injection = generateWidget({ prompt: 'Which DQI Enforce policy picked up prompt injection attempts in production for Qwen 3.6?' }, now);
+    expect(injection.widget.metric.id).toBe('metric.prompt_injection_attempts');
+    expect(injection.widget.dimension.id).toBe('dimension.enforce_policy');
+    expect(JSON.stringify(injection.query.elasticsearchDsl)).toContain('model.keyword');
   });
 });

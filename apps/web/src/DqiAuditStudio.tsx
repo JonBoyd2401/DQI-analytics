@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { widgetGenerationResponseSchema, type WidgetGenerationResponse } from '@dqi/contracts';
 
 const examples = [
-  'Show blocked events by DQI Enforce policy for the last 12 weeks as a bar chart with an aurora palette',
-  'Compare blocked vs passed AI usage over the past 12 weeks as a smooth area chart with an ocean palette',
-  'Which DQI Enforce policy picked up critical events in production over the last 26 weeks? Use a dark donut chart',
-  'Show the ungrounded response rate for Qwen 3.6 by integration for 12 weeks as a minimal light line chart'
+  'Show the top EU AI Act control findings by control for the last 12 weeks as a sunset bar chart',
+  'Compare blocked vs passed AI usage by decision in production over the past 12 weeks as a smooth ocean area chart',
+  'Trend model drift score for Qwen 3.6 by business unit over the last 26 weeks with a dark line chart',
+  'Show audit coverage and evidence completeness for EU AI Act by regulation in the EU region as a light KPI',
+  'Which DQI Enforce policy picked up prompt injection attempts in production for Qwen 3.6?',
+  'Show estimated model cost and p95 latency by vendor for confidential data over 12 weeks'
 ];
 
 const editExamples = ['Change to a sunset palette and use bars', 'Move the x axis to the top and rotate labels 45 degrees', 'Use a light theme, hide grid lines and remove points', 'Put the legend on the right and use smooth purple lines'];
@@ -21,7 +23,8 @@ const palettes = {
 function formatted(value: number, format: WidgetGenerationResponse['widget']['metric']['format']) {
   if (format === 'percentage') return `${value.toFixed(1)}%`;
   if (format === 'score') return value.toFixed(2);
-  if (format === 'duration') return `${Math.round(value / 60)}m ${Math.round(value % 60)}s`;
+  if (format === 'currency') return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(value);
+  if (format === 'duration') return `${Math.round(value)}ms`;
   return Math.round(value).toLocaleString('en-GB');
 }
 
@@ -62,18 +65,18 @@ export function DqiAuditStudio() {
 
   return <main className="dqi-shell">
     <nav className="dqi-nav"><div className="dqi-brand"><span>DQI</span><div><strong>Audit Analytics</strong><small>AI evidence & compliance reporting</small></div></div><div className="dqi-demo"><i/>Synthetic audit event store</div></nav>
-    <section className="dqi-hero"><div><span className="kicker">NATURAL LANGUAGE → GOVERNED QUERY → AUDIT REPORT</span><h1>Ask the evidence.<br/><em>See the compliance story.</em></h1><p>Turn DQI usage logs, assessments, and integration events into traceable audit reporting—without letting the language model calculate the answer.</p></div><div className="reg-card"><span>REGULATORY PROFILE</span><strong>EU AI Act</strong><small>Regulation (EU) 2024/1689</small><a href="https://eur-lex.europa.eu/eli/reg/2024/1689/oj/eng" target="_blank" rel="noreferrer">Official regulation ↗</a></div></section>
-    <section className="prompt-panel"><div className="prompt-heading"><label htmlFor="audit-prompt">Describe your audit report</label><span>Governed prompt</span></div><textarea id="audit-prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={4} maxLength={1000}/><div className="prompt-actions"><small>{prompt.length} / 1,000</small><button onClick={generate} disabled={loading || prompt.trim().length < 10}>{loading ? 'Compiling audit query…' : '✦ Generate compliance widget'}</button></div></section>
+    <section className="dqi-hero"><div><span className="kicker">QWEN PROPOSAL -&gt; GOVERNED SEMANTIC PLAN -&gt; AUDIT REPORT</span><h1>Ask the evidence.<br/><em>See the compliance story.</em></h1><p>Turn DQI usage, governance, assessment, integration, model drift, evidence, policy and cost logs into traceable audit reporting — without letting the language model calculate the answer.</p></div><div className="reg-card"><span>SEMANTIC ENGINE</span><strong>Qwen 3.6</strong><small>Validated deterministic compiler</small><a href="https://github.com/JonBoyd2401/Qwen3.6" target="_blank" rel="noreferrer">Model fork -&gt;</a></div></section>
+    <section className="prompt-panel"><div className="prompt-heading"><label htmlFor="audit-prompt">Describe your audit report</label><span>Governed prompt</span></div><textarea id="audit-prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={4} maxLength={1000}/><div className="prompt-actions"><small>{prompt.length} / 1,000</small><button onClick={generate} disabled={loading || prompt.trim().length < 10}>{loading ? 'Compiling audit query...' : 'Generate compliance widget'}</button></div></section>
     <div className="prompt-examples"><span>Example prompts</span>{examples.map((example, index) => <button key={example} onClick={() => setPrompt(example)}>0{index + 1}</button>)}</div>
     {error && <div className="dqi-error">{error}</div>}
-    {result && <section className="refine-panel"><div><span className="kicker">LIVE VIEW EDITOR</span><label htmlFor="view-edit">Refine this report with another prompt</label><small>KPI, filters, and evidence stay fixed while the visual updates.</small></div><div className="refine-input"><input id="view-edit" value={editPrompt} onChange={(event) => setEditPrompt(event.target.value)} placeholder="e.g. Make it blue, move the x axis to the top…"/><button onClick={refineView} disabled={editLoading || editPrompt.trim().length < 3}>{editLoading ? 'Applying…' : 'Apply edit ↗'}</button></div><div className="edit-chips">{editExamples.map((example) => <button key={example} onClick={() => setEditPrompt(example)}>{example}</button>)}</div></section>}
-    {result ? <AuditWidget result={result}/> : <section className="blank-canvas"><div className="audit-glyph"><i/><i/><i/></div><div><h2>Your audit canvas is ready</h2><p>Ask what was allowed, blocked, or sent for review; which Enforce policy acted; or break AI usage down by model, integration, environment, decision, and severity.</p><button onClick={() => setPrompt(examples[1]!)}>Load a sample prompt →</button></div></section>}
-    <section className="audit-catalogue"><div><span className="kicker">GOVERNED SEMANTIC CATALOGUE</span><h2>Ask DQI almost anything</h2></div><Catalogue title="Decisions & controls" items={['AI usage · Passed · Blocked · Review', 'Pass and block rates', 'Enforce policy hits', 'Assessment and grounding results']}/><Catalogue title="Break down or filter" items={['Integration · Model · Environment', 'Enforce policy · Decision · Severity', 'Production, staging or development', 'Named models, apps and policies']}/><Catalogue title="Presentation" items={['Line · Area · Bar · Donut · KPI', 'Aurora · Ocean · Sunset · Mono', '4, 12 or 26 weeks', 'Dark or light theme']}/></section>
+    {result && <section className="refine-panel"><div><span className="kicker">LIVE VIEW EDITOR</span><label htmlFor="view-edit">Refine this report with another prompt</label><small>KPI, filters, and evidence stay fixed while the visual updates.</small></div><div className="refine-input"><input id="view-edit" value={editPrompt} onChange={(event) => setEditPrompt(event.target.value)} placeholder="e.g. Make it blue, move the x axis to the top..."/><button onClick={refineView} disabled={editLoading || editPrompt.trim().length < 3}>{editLoading ? 'Applying...' : 'Apply edit -&gt;'}</button></div><div className="edit-chips">{editExamples.map((example) => <button key={example} onClick={() => setEditPrompt(example)}>{example}</button>)}</div></section>}
+    {result ? <AuditWidget result={result}/> : <section className="blank-canvas"><div className="audit-glyph"><i/><i/><i/></div><div><h2>Your audit canvas is ready</h2><p>Ask what was allowed, blocked, reviewed, overridden, drifting, incomplete, expensive, slow, or missing evidence; then split it by model, system, policy, control, region, business unit, role, risk tier, data class or regulation.</p><button onClick={() => setPrompt(examples[1]!)}>Load a sample prompt -&gt;</button></div></section>}
+    <section className="audit-catalogue"><div><span className="kicker">GOVERNED SEMANTIC CATALOGUE</span><h2>Ask DQI almost anything</h2></div><Catalogue title="Governance metrics" items={["Usage · Passed · Blocked · Review", "Prompt injection · PII leakage · Retention breaches", "Model drift · Grounding · Evidence completeness", "Cost · Tokens · Latency · SLA breaches"]}/><Catalogue title="Break down or filter" items={["System · Model · Vendor · Integration", "Policy · Control · Regulation · Risk tier", "Region · Business unit · User role", "Environment · Decision · Data class"]}/><Catalogue title="Guardrails" items={["Qwen proposes semantic intent only", "Deterministic compiler builds ES/OpenSearch DSL", "Published catalogue identifiers only", "4, 12 or 26 complete weeks"]}/></section>
   </main>;
 }
 
 function AuditWidget({ result }: { result: WidgetGenerationResponse }) {
-  const { widget, series, summary, provenance, query } = result;
+  const { widget, series, summary, provenance, query, semanticEngine } = result;
   const colors = palettes[widget.visual.palette];
   const light = widget.visual.theme === 'light';
   const option = useMemo(() => {
@@ -84,17 +87,21 @@ function AuditWidget({ result }: { result: WidgetGenerationResponse }) {
     const legend = widget.visual.legendPosition === 'right' ? { right: 0, top: 'middle', orient: 'vertical' } : widget.visual.legendPosition === 'bottom' ? { bottom: 0 } : { top: 0 };
     return { color: colors, animationDurationUpdate: 450, tooltip: { trigger: 'axis' }, legend: { show: widget.visual.showLegend, ...legend, textStyle: { color: muted } }, grid: { left: 60, right: widget.visual.legendPosition === 'right' ? 150 : 20, top: widget.visual.xAxisPosition === 'top' ? 75 : 48, bottom: widget.visual.legendPosition === 'bottom' ? 70 : 48 }, xAxis: { show: widget.visual.showXAxis, type: 'category', position: widget.visual.xAxisPosition, data: series[0]?.points.map((point) => point.label), axisLabel: { color: muted, rotate: widget.visual.xAxisLabelRotation }, axisLine: { lineStyle: { color: grid } } }, yAxis: { show: widget.visual.showYAxis, type: 'value', axisLabel: { color: muted }, splitLine: { show: widget.visual.showGrid, lineStyle: { color: grid } } }, series: series.map((item, index) => ({ name: item.label, type: widget.visual.chartType === 'bar' ? 'bar' : 'line', smooth: widget.visual.smooth, symbol: widget.visual.showPoints ? 'circle' : 'none', symbolSize: 7, barMaxWidth: 28, areaStyle: widget.visual.chartType === 'area' ? { opacity: .17 } : undefined, lineStyle: { width: 3 }, data: item.points.map((point) => point.value), itemStyle: { color: colors[index % colors.length] } })) };
   }, [colors, light, series, widget]);
-  const lowerIsBetter = ['metric.blocked_events', 'metric.blocked_rate', 'metric.reviewed_events', 'metric.policy_violation_rate', 'metric.high_risk_events', 'metric.ungrounded_response_rate', 'metric.integration_error_rate'].includes(widget.metric.id);
+  const lowerIsBetter = ['metric.blocked_events', 'metric.blocked_rate', 'metric.reviewed_events', 'metric.policy_violation_rate', 'metric.high_risk_events', 'metric.high_risk_usage_rate', 'metric.ungrounded_response_rate', 'metric.integration_error_rate', 'metric.prompt_injection_attempts', 'metric.pii_exposure_attempts', 'metric.estimated_cost', 'metric.avg_latency_ms', 'metric.p95_latency_ms', 'metric.human_overrides', 'metric.override_rate', 'metric.model_drift_score', 'metric.exception_approvals', 'metric.unresolved_findings', 'metric.retention_breaches', 'metric.sla_breach_rate'].includes(widget.metric.id);
   const favourable = lowerIsBetter ? summary.direction === 'down' : summary.direction === 'up';
   return <section className={`audit-widget ${light ? 'audit-widget-light' : ''}`}>
-    <header><div><span className="kicker">COMPLIANCE WIDGET · V{widget.version}</span><h2>{widget.title}</h2><p>{widget.metric.label} · {widget.dimension.label} · Last {widget.timeRangeWeeks} complete weeks</p></div><div className={`trend ${favourable ? 'positive' : 'attention'}`}>{summary.direction === 'up' ? '↗' : summary.direction === 'down' ? '↘' : '→'} {Math.abs(summary.changePercent).toFixed(1)}%<small>vs previous week</small></div></header>
+    <header><div><span className="kicker">COMPLIANCE WIDGET - V{widget.version}</span><h2>{widget.title}</h2><p>{widget.metric.label} - {widget.dimension.label} - Last {widget.timeRangeWeeks} complete weeks</p></div><div className={`trend ${favourable ? 'positive' : 'attention'}`}>{summary.direction === 'up' ? 'up' : summary.direction === 'down' ? 'down' : 'flat'} {Math.abs(summary.changePercent).toFixed(1)}%<small>vs previous week</small></div></header>
     <div className="visual-row"><div className="primary-stat"><span>Current result</span><strong>{formatted(summary.current, widget.metric.format)}</strong><small>Previous {formatted(summary.previous, widget.metric.format)}</small><b>EU AI Act</b></div>{widget.visual.chartType !== 'kpi' && <ReactECharts option={option} style={{ height: 390, flex: 1 }} notMerge/>}</div>
     <div className="interpretation"><strong>Prompt interpreted as</strong>{widget.interpretation.map((item) => <span key={item}>{item}</span>)}</div>
+    <div className="interpretation"><strong>Qwen semantic safety</strong><span>{semanticEngine.modelId}</span><span>{semanticEngine.mode}</span><span>{Math.round(semanticEngine.confidence * 100)}% confidence</span>{semanticEngine.safeguards.slice(0, 2).map((item) => <span key={item}>{item}</span>)}</div>
     {widget.unsupportedRequests.length > 0 && <div className="dqi-notice">Not applied: {widget.unsupportedRequests.join('; ')}</div>}
-    <div className="query-flow"><div><span>01</span><strong>Natural language</strong><p>{query.naturalLanguage}</p></div><div className="flow-arrow">→</div><div><span>02</span><strong>Governed semantic plan</strong><pre>{JSON.stringify(query.semanticPlan, null, 2)}</pre></div><div className="flow-arrow">→</div><div><span>03</span><strong>Elasticsearch query</strong><pre>{JSON.stringify(query.elasticsearchDsl, null, 2)}</pre></div></div>
+    <div className="query-flow"><div><span>01</span><strong>Natural language</strong><p>{query.naturalLanguage}</p></div><div className="flow-arrow">â†’</div><div><span>02</span><strong>Governed semantic plan</strong><pre>{JSON.stringify(query.semanticPlan, null, 2)}</pre></div><div className="flow-arrow">â†’</div><div><span>03</span><strong>Elasticsearch query</strong><pre>{JSON.stringify(query.elasticsearchDsl, null, 2)}</pre></div></div>
     <details><summary>Audit evidence & provenance</summary><div className="evidence-grid"><Evidence label="Source" value={provenance.source}/><Evidence label="Policy profile" value={provenance.regulatoryProfile}/><Evidence label="Calculation" value={provenance.calculation}/><Evidence label="Rows scanned" value={provenance.recordsScanned.toLocaleString()}/></div><p>{provenance.disclaimer} This demonstration supports audit exploration and is not legal advice or a determination of compliance.</p></details>
   </section>;
 }
 
 function Catalogue({ title, items }: { title: string; items: string[] }) { return <div className="catalogue-column"><strong>{title}</strong>{items.map((item) => <span key={item}>{item}</span>)}</div>; }
 function Evidence({ label, value }: { label: string; value: string }) { return <div><span>{label}</span><strong>{value}</strong></div>; }
+
+
+

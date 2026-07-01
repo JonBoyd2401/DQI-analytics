@@ -110,17 +110,32 @@ export const generatedWidgetSchema = z.object({
   version: z.literal('1.0'),
   title: z.string(),
   metric: z.object({
-    id: z.enum(['metric.ai_requests', 'metric.passed_events', 'metric.pass_rate', 'metric.blocked_events', 'metric.blocked_rate', 'metric.reviewed_events', 'metric.enforce_policy_hits', 'metric.policy_violation_rate', 'metric.assessment_pass_rate', 'metric.high_risk_events', 'metric.ungrounded_response_rate', 'metric.integration_error_rate']),
+    id: z.enum([
+      'metric.ai_requests', 'metric.passed_events', 'metric.pass_rate', 'metric.blocked_events', 'metric.blocked_rate', 'metric.reviewed_events',
+      'metric.enforce_policy_hits', 'metric.policy_violation_rate', 'metric.assessment_pass_rate', 'metric.high_risk_events',
+      'metric.high_risk_usage_rate', 'metric.ungrounded_response_rate', 'metric.integration_error_rate', 'metric.prompt_injection_attempts',
+      'metric.pii_exposure_attempts', 'metric.total_tokens', 'metric.estimated_cost', 'metric.avg_latency_ms', 'metric.p95_latency_ms',
+      'metric.unique_users', 'metric.human_overrides', 'metric.override_rate', 'metric.audit_coverage_rate', 'metric.evidence_completeness_rate',
+      'metric.model_drift_score', 'metric.exception_approvals', 'metric.unresolved_findings', 'metric.retention_breaches', 'metric.sla_breach_rate'
+    ]),
     label: z.string(),
-    format: z.enum(['integer', 'duration', 'percentage', 'score'])
+    format: z.enum(['integer', 'duration', 'percentage', 'score', 'currency'])
   }).strict(),
   dimension: z.object({
-    id: z.enum(['dimension.integration', 'dimension.model', 'dimension.environment', 'dimension.enforce_policy', 'dimension.decision', 'dimension.severity', 'dimension.overall']),
+    id: z.enum([
+      'dimension.integration', 'dimension.model', 'dimension.environment', 'dimension.enforce_policy', 'dimension.decision', 'dimension.severity',
+      'dimension.risk_tier', 'dimension.region', 'dimension.business_unit', 'dimension.user_role', 'dimension.data_class', 'dimension.regulation',
+      'dimension.control', 'dimension.vendor', 'dimension.system', 'dimension.overall'
+    ]),
     label: z.string()
   }).strict(),
   timeRangeWeeks: z.union([z.literal(4), z.literal(12), z.literal(26)]),
   grain: z.literal('week'),
-  filters: z.array(z.object({ field: z.enum(['integration', 'model', 'environment', 'enforcePolicy', 'decision', 'severity']), operator: z.literal('equals'), value: z.string() }).strict()).max(8),
+  filters: z.array(z.object({
+    field: z.enum(['integration', 'model', 'environment', 'enforcePolicy', 'decision', 'severity', 'riskTier', 'region', 'businessUnit', 'userRole', 'dataClass', 'regulation', 'control', 'vendor', 'system']),
+    operator: z.literal('equals'),
+    value: z.string()
+  }).strict()).max(12),
   visual: widgetVisualSchema,
   interpretation: z.array(z.string()),
   unsupportedRequests: z.array(z.string())
@@ -137,8 +152,23 @@ export const widgetGenerationResponseSchema = z.object({
   series: z.array(widgetSeriesSchema),
   query: z.object({
     naturalLanguage: z.string(),
-    semanticPlan: z.object({ metricId: z.string(), dimensionId: z.string(), timeRangeWeeks: z.number(), grain: z.literal('week'), policyPack: z.literal('eu-ai-act-2024-1689'), filters: z.array(z.object({ field: z.string(), operator: z.literal('equals'), value: z.string() }).strict()) }).strict(),
+    semanticPlan: z.object({
+      metricId: z.string(),
+      dimensionId: z.string(),
+      intent: z.enum(['trend', 'breakdown', 'comparison', 'top_n', 'exception_review', 'coverage_report']),
+      timeRangeWeeks: z.number(),
+      grain: z.literal('week'),
+      policyPack: z.literal('eu-ai-act-2024-1689'),
+      filters: z.array(z.object({ field: z.string(), operator: z.literal('equals'), value: z.string() }).strict())
+    }).strict(),
     elasticsearchDsl: z.record(z.unknown())
+  }).strict(),
+  semanticEngine: z.object({
+    mode: z.enum(['qwen-proposal-validated', 'deterministic-fallback']),
+    modelId: z.literal('JonBoyd2401/Qwen3.6'),
+    confidence: z.number().min(0).max(1),
+    validated: z.literal(true),
+    safeguards: z.array(z.string())
   }).strict(),
   summary: z.object({
     current: z.number(),
@@ -148,7 +178,7 @@ export const widgetGenerationResponseSchema = z.object({
   }).strict(),
   provenance: z.object({
     source: z.literal('Synthetic DQI Audit Event Store'),
-    datasetVersion: z.literal('2026.1'),
+    datasetVersion: z.literal('2026.2'),
     generatedAt: z.string().datetime(),
     recordsScanned: z.number().int().positive(),
     calculation: z.string(),
