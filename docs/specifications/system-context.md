@@ -8,6 +8,6 @@
 
 **Failure/observability:** Invalid requests return a stable 400 error and a warning log. Source failures will be classified separately from validation failures.
 
-**Acceptance:** The first request produces 12 weekly points for each of three teams and rejects unknown IDs or extra properties.
+**Acceptance:** A natural-language EU AI Act audit request produces weekly points for governed integrations, exposes its semantic plan and backend query, and rejects unknown IDs or extra properties.
 
 **Related:** PRD-001–006, QUERY-001–002, SEC-001.

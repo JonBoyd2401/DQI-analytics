@@ -10,4 +10,4 @@ COPY . .
 RUN npm run build
 ENV NODE_ENV=production
 EXPOSE 3001
-CMD ["npm", "run", "start", "-w", "@cx/api"]
+CMD ["npm", "run", "start", "-w", "@dqi/api"]

@@ -1,16 +1,16 @@
-import { semanticModelSchema, type SemanticModel } from '@cx/contracts';
+import { semanticModelSchema, type SemanticModel } from '@dqi/contracts';
 
-export const contactCentreModel: SemanticModel = semanticModelSchema.parse({
-  id: 'model.contact_centre',
+export const dqiAuditModel: SemanticModel = semanticModelSchema.parse({
+  id: 'model.dqi_audit',
   version: '1.0.0',
   status: 'published',
-  source: { connectionId: 'connection.demo', index: 'contact-centre-demo' },
+  source: { connectionId: 'connection.demo', index: 'dqi-audit-events-demo' },
   metrics: [{
-    id: 'metric.contact_volume', label: 'Contact volume',
-    description: 'Count of contact records in the governed time range.', aggregation: 'count', unit: 'contacts'
+    id: 'metric.ai_requests', label: 'AI usage',
+    description: 'Count of governed AI usage events in the audit time range.', aggregation: 'count', unit: 'events'
   }],
   dimensions: [
-    { id: 'dimension.team', label: 'Team', field: 'team.keyword', type: 'keyword' },
-    { id: 'dimension.contact_started_at', label: 'Contact started at', field: 'contact_started_at', type: 'date', allowedGrains: ['day', 'week', 'month'] }
+    { id: 'dimension.integration', label: 'Integration', field: 'integration.keyword', type: 'keyword' },
+    { id: 'dimension.event_timestamp', label: 'Event timestamp', field: 'event_timestamp', type: 'date', allowedGrains: ['day', 'week', 'month'] }
   ]
 });

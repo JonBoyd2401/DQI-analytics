@@ -1,4 +1,4 @@
-import { queryIrSchema, semanticRequestSchema, type QueryIr, type SemanticModel, type SemanticRequest } from '@cx/contracts';
+import { queryIrSchema, semanticRequestSchema, type QueryIr, type SemanticModel, type SemanticRequest } from '@dqi/contracts';
 
 const ranges = { last_4_complete_weeks: 4, last_12_complete_weeks: 12, last_26_complete_weeks: 26 } as const;
 

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { analyticsResponseSchema, type AnalyticsResponse, type BackendKind, type Connector, type SemanticModel } from '@cx/contracts';
+import { analyticsResponseSchema, type AnalyticsResponse, type BackendKind, type Connector, type SemanticModel } from '@dqi/contracts';
 import { compileQuery } from './compiler.js';
 import { planQuery } from './planner.js';
 

@@ -1,5 +1,5 @@
 # Widget specification
 
-The first widget is version `1.0`, line visualisation, one contact-volume metric, team series, weekly time axis, and provenance inspection. Widget evolution will add stable widget IDs, layout-independent query intent, filters, comparisons, thresholds, drill-down, ownership, and immutable published versions.
+The first prompt-created widget is version `1.0` and supports governed DQI metrics, integration/model/environment dimensions, complete-week ranges, five chart types, four palettes, light/dark themes, query inspection, and provenance. Widget evolution will add filters, comparisons, thresholds, drill-down, ownership, immutable published versions, and reviewed regulatory mappings.
 
 **Related:** WIDGET-001.

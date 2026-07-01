@@ -1,3 +1,3 @@
 # Golden evaluation dataset
 
-Initial utterance: “Show weekly contact volume by team for the last 12 weeks.” Expected proposal: metric `metric.contact_volume`, dimension `dimension.team`, time field `dimension.contact_started_at`, range `last_12_complete_weeks`, grain `week`, visualisation `line`. Any DSL, unknown property, unknown ID, or unapproved field fails.
+Initial utterance: “Show the EU AI Act control finding rate by integration for the last 12 weeks as an area chart.” Expected proposal: metric `metric.policy_violation_rate`, dimension `dimension.integration`, range `last_12_complete_weeks`, policy pack `eu-ai-act-2024-1689`, grain `week`, visualisation `area`. Unknown IDs, user-supplied DSL, unsupported visual types, and unapproved fields fail or are explicitly reported as not applied.

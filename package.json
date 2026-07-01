@@ -1,11 +1,11 @@
 {
-  "name": "cx-insight-blocks",
+  "name": "dqi-audit-analytics",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
-    "dev": "concurrently -n api,web -c cyan,magenta \"npm:dev -w @cx/api\" \"npm:dev -w @cx/web\"",
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm:dev -w @dqi/api\" \"npm:dev -w @dqi/web\"",
     "build": "npm run build --workspaces --if-present",
     "test": "vitest run",
     "typecheck": "tsc -b --pretty false",

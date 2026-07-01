@@ -3,6 +3,6 @@ services:
     build:
       context: ../..
       dockerfile: infra/docker/Dockerfile
-    command: npm run start -w @cx/api
+    command: npm run start -w @dqi/api
     ports: ["3001:3001"]
     environment: { HOST: "0.0.0.0", PORT: "3001" }

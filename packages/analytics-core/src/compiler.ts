@@ -1,4 +1,4 @@
-import type { BackendKind, QueryIr } from '@cx/contracts';
+import type { BackendKind, QueryIr } from '@dqi/contracts';
 
 export function compileQuery(query: QueryIr, backend: BackendKind): Record<string, unknown> {
   const dimension = query.dimensions[0];

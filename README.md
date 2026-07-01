@@ -1,6 +1,8 @@
-# CX Insight Blocks
+# DQI Audit Analytics
 
-An open-source, deterministic analytics foundation for contact centres. Natural-language AI may propose semantic requests, but only validated application code can compile and execute analytics queries.
+An open-source, deterministic audit analytics foundation for AI governance. Users describe an audit KPI and visual style in natural language; DQI compiles that request into a governed semantic plan and Elasticsearch/OpenSearch query, calculates the answer from audit evidence, and renders a traceable compliance report.
+
+The demonstration uses entirely fabricated DQI usage, assessment, model, environment, integration, and control-finding events. Its featured policy profile is the EU AI Act (Regulation (EU) 2024/1689). It supports audit exploration and is not legal advice or a determination of compliance.
 
 ## Quick start
 
@@ -9,7 +11,9 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. The API runs on `http://localhost:3001` and uses a deterministic synthetic connector by default.
+Open `http://localhost:5173`. The API runs on `http://localhost:3001`. Try prompts such as:
+
+> Show the EU AI Act control finding rate by integration for the last 12 weeks as a smooth area chart with an aurora palette.
 
 ## Deploy the demo to Render
 

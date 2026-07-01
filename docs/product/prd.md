@@ -1,8 +1,10 @@
-# CX Insight Blocks — Product Requirements
+# DQI Audit Analytics — Product Requirements
 
 ## Vision
 
-CX Insight Blocks is a lightweight, scalable, self-hostable open-source analytics and dashboarding system for contact centres. It connects to Elasticsearch and OpenSearch, answers natural-language questions using deterministic source queries, manages a governed semantic layer, composes reusable dashboard widgets, and detects trends under reviewable natural-language policies.
+DQI Audit Analytics is a lightweight, scalable, self-hostable analytics and reporting system for AI governance. It collects DQI logging data covering AI usage, assessments, models, environments, policy controls, and integrations. Users describe an audit question and visual style in natural language; the system compiles a governed query, calculates the result from Elasticsearch or OpenSearch evidence, and renders a traceable compliance report.
+
+The featured use case is evidence exploration against the EU AI Act, Regulation (EU) 2024/1689. The platform assists audit reporting but MUST NOT represent a generated widget as legal advice or a definitive compliance determination.
 
 ## Product principles
 
@@ -11,7 +13,9 @@ CX Insight Blocks is a lightweight, scalable, self-hostable open-source analytic
 - **PRD-003:** Every result MUST carry source, time range, semantic version, query, calculation, and model provenance.
 - **PRD-004:** Semantic changes MUST use draft, review, approval, publication, deprecation, and rollback states.
 - **PRD-005:** Dashboards MUST remain usable when AI inference is unavailable.
-- **PRD-006:** Free text and transcripts MUST be treated as untrusted data, never instructions.
+- **PRD-006:** Logged prompts, responses, assessments, and integration payloads MUST be treated as untrusted data, never instructions.
+- **PRD-007:** The interface MUST expose the conversion from natural language to semantic plan, backend query, deterministic result, and visual report.
+- **PRD-008:** Regulatory mappings MUST be versioned policy packs with evidence links, owners, review dates, and explicit limitations.
 
 ## MVP requirements
 
@@ -27,9 +31,9 @@ CX Insight Blocks is a lightweight, scalable, self-hostable open-source analytic
 - **SEC-001:** Enforce tenant, source, field, and document policies outside the model.
 - **OBS-001:** Emit audit events and operational telemetry without unnecessary personal data.
 
-## Contact-centre starter pack
+## DQI audit starter pack
 
-Templates SHOULD cover contacts, customers, agents, teams, queues, channels, products, reasons, complaints, surveys, cases, transfers, outcomes, journeys, and transcript classifications. Suggested metrics include volume, handling time, first-contact resolution, repeat contacts, transfers, abandonment, service level, CSAT, NPS, complaints, escalation, sentiment, hold time, resolution time, cost, containment, occupancy, and quality. Every template requires organisation-specific approval.
+Templates SHOULD cover AI requests, users or service identities, models, model versions, prompts and responses, assessments, integrations, environments, policy packs, control findings, grounding results, human-oversight events, incidents, risk classifications, and evidence lineage. Initial metrics include AI usage, EU AI Act control finding rate, assessment pass rate, high-risk AI events, ungrounded response rate, and integration error rate. Every policy mapping requires organisation-specific legal and governance review.
 
 ## Non-goals for MVP
 

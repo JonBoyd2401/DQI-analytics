@@ -30,4 +30,4 @@ COPY --from=build /app/packages/contracts/dist packages/contracts/dist
 COPY --from=build /app/packages/analytics-core/dist packages/analytics-core/dist
 
 EXPOSE 10000
-CMD ["npm", "run", "start", "-w", "@cx/api"]
+CMD ["npm", "run", "start", "-w", "@dqi/api"]

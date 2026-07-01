@@ -1,6 +1,6 @@
-import type { AnalyticsPoint, Connector, QueryIr } from '@cx/contracts';
+import type { AnalyticsPoint, Connector, QueryIr } from '@dqi/contracts';
 
-const teams = ['Billing', 'Retention', 'Support'];
+const integrations = ['Customer Service Copilot', 'Knowledge Search', 'Quality Monitor'];
 
 export class SyntheticConnector implements Connector {
   readonly id = 'connection.demo';
@@ -12,11 +12,11 @@ export class SyntheticConnector implements Connector {
     const end = new Date(query.time.to);
     let week = 0;
     while (cursor < end) {
-      for (let teamIndex = 0; teamIndex < teams.length; teamIndex += 1) {
+      for (let integrationIndex = 0; integrationIndex < integrations.length; integrationIndex += 1) {
         points.push({
           timestamp: cursor.toISOString(), dimensionId: query.dimensions[0]!.id,
-          dimensionValue: teams[teamIndex]!, metricId: query.metric.id,
-          value: 82 + teamIndex * 19 + ((week * 13 + teamIndex * 7) % 31)
+          dimensionValue: integrations[integrationIndex]!, metricId: query.metric.id,
+          value: 8200 + integrationIndex * 1900 + week * 310 + ((week * 97 + integrationIndex * 71) % 530)
         });
       }
       cursor.setUTCDate(cursor.getUTCDate() + 7);

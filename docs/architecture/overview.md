@@ -4,7 +4,7 @@ The MVP is a TypeScript modular monolith with separately runnable web and API pr
 
 ```mermaid
 flowchart LR
-  U["Contact-centre user"] --> W["React web app"]
+  U["Auditor / AI governance user"] --> W["DQI audit studio"]
   W --> A["Analytics API"]
   A --> V["Runtime validation and policy"]
   V --> S["Semantic layer"]

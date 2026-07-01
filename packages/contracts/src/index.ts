@@ -20,7 +20,7 @@ export const semanticModelSchema = z.object({
   status: z.literal('published'),
   source: z.object({ connectionId: strictId, index: z.string().min(1) }).strict(),
   metrics: z.array(z.object({
-    id: strictId, label: z.string(), description: z.string(), aggregation: z.literal('count'), unit: z.literal('contacts')
+    id: strictId, label: z.string(), description: z.string(), aggregation: z.literal('count'), unit: z.enum(['contacts', 'events'])
   }).strict()),
   dimensions: z.array(z.object({
     id: strictId, label: z.string(), field: z.string(), type: z.enum(['keyword', 'date']), allowedGrains: z.array(timeGrainSchema).optional()
@@ -30,7 +30,7 @@ export const semanticModelSchema = z.object({
 export const queryIrSchema = z.object({
   version: z.literal('1.0'),
   source: z.object({ connectionId: strictId, index: z.string() }).strict(),
-  metric: z.object({ id: strictId, operation: z.literal('count'), unit: z.literal('contacts') }).strict(),
+  metric: z.object({ id: strictId, operation: z.literal('count'), unit: z.enum(['contacts', 'events']) }).strict(),
   dimensions: z.array(z.object({ id: strictId, field: z.string(), type: z.literal('keyword') }).strict()).max(3),
   time: z.object({ fieldId: strictId, field: z.string(), from: z.string().datetime(), to: z.string().datetime(), grain: timeGrainSchema }).strict(),
   limits: z.object({ maxBuckets: z.number().int().min(1).max(5000), timeoutMs: z.number().int().min(100).max(30000) }).strict()
@@ -80,3 +80,70 @@ export interface AIProvider {
   health(signal?: AbortSignal): Promise<boolean>;
   proposeSemanticRequest(input: string, signal?: AbortSignal): Promise<unknown>;
 }
+
+export const widgetPromptSchema = z.object({
+  prompt: z.string().trim().min(10).max(1000)
+}).strict();
+
+export const widgetVisualSchema = z.object({
+  chartType: z.enum(['line', 'area', 'bar', 'donut', 'kpi']),
+  palette: z.enum(['aurora', 'ocean', 'sunset', 'mono']),
+  theme: z.enum(['dark', 'light']),
+  showLegend: z.boolean(),
+  smooth: z.boolean()
+}).strict();
+
+export const generatedWidgetSchema = z.object({
+  id: z.string().uuid(),
+  version: z.literal('1.0'),
+  title: z.string(),
+  metric: z.object({
+    id: z.enum(['metric.ai_requests', 'metric.policy_violation_rate', 'metric.assessment_pass_rate', 'metric.high_risk_events', 'metric.ungrounded_response_rate', 'metric.integration_error_rate']),
+    label: z.string(),
+    format: z.enum(['integer', 'duration', 'percentage', 'score'])
+  }).strict(),
+  dimension: z.object({
+    id: z.enum(['dimension.integration', 'dimension.model', 'dimension.environment', 'dimension.overall']),
+    label: z.string()
+  }).strict(),
+  timeRangeWeeks: z.union([z.literal(4), z.literal(12), z.literal(26)]),
+  grain: z.literal('week'),
+  visual: widgetVisualSchema,
+  interpretation: z.array(z.string()),
+  unsupportedRequests: z.array(z.string())
+}).strict();
+
+export const widgetSeriesSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  points: z.array(z.object({ period: z.string().datetime(), label: z.string(), value: z.number() }).strict())
+}).strict();
+
+export const widgetGenerationResponseSchema = z.object({
+  widget: generatedWidgetSchema,
+  series: z.array(widgetSeriesSchema),
+  query: z.object({
+    naturalLanguage: z.string(),
+    semanticPlan: z.object({ metricId: z.string(), dimensionId: z.string(), timeRangeWeeks: z.number(), grain: z.literal('week'), policyPack: z.literal('eu-ai-act-2024-1689') }).strict(),
+    elasticsearchDsl: z.record(z.unknown())
+  }).strict(),
+  summary: z.object({
+    current: z.number(),
+    previous: z.number(),
+    changePercent: z.number(),
+    direction: z.enum(['up', 'down', 'flat'])
+  }).strict(),
+  provenance: z.object({
+    source: z.literal('Synthetic DQI Audit Event Store'),
+    datasetVersion: z.literal('2026.1'),
+    generatedAt: z.string().datetime(),
+    recordsScanned: z.number().int().positive(),
+    calculation: z.string(),
+    regulatoryProfile: z.literal('EU AI Act — Regulation (EU) 2024/1689'),
+    disclaimer: z.string()
+  }).strict()
+}).strict();
+
+export type WidgetPrompt = z.infer<typeof widgetPromptSchema>;
+export type GeneratedWidget = z.infer<typeof generatedWidgetSchema>;
+export type WidgetGenerationResponse = z.infer<typeof widgetGenerationResponseSchema>;

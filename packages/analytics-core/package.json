@@ -1,9 +1,9 @@
 {
-  "name": "@cx/analytics-core",
+  "name": "@dqi/analytics-core",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "exports": { ".": "./dist/index.js" },
   "scripts": { "build": "tsc -b" },
-  "dependencies": { "@cx/contracts": "*", "zod": "^3.25.56" }
+  "dependencies": { "@dqi/contracts": "*", "zod": "^3.25.56" }
 }
