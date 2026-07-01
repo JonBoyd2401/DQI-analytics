@@ -98,16 +98,17 @@ export const generatedWidgetSchema = z.object({
   version: z.literal('1.0'),
   title: z.string(),
   metric: z.object({
-    id: z.enum(['metric.ai_requests', 'metric.policy_violation_rate', 'metric.assessment_pass_rate', 'metric.high_risk_events', 'metric.ungrounded_response_rate', 'metric.integration_error_rate']),
+    id: z.enum(['metric.ai_requests', 'metric.passed_events', 'metric.pass_rate', 'metric.blocked_events', 'metric.blocked_rate', 'metric.reviewed_events', 'metric.enforce_policy_hits', 'metric.policy_violation_rate', 'metric.assessment_pass_rate', 'metric.high_risk_events', 'metric.ungrounded_response_rate', 'metric.integration_error_rate']),
     label: z.string(),
     format: z.enum(['integer', 'duration', 'percentage', 'score'])
   }).strict(),
   dimension: z.object({
-    id: z.enum(['dimension.integration', 'dimension.model', 'dimension.environment', 'dimension.overall']),
+    id: z.enum(['dimension.integration', 'dimension.model', 'dimension.environment', 'dimension.enforce_policy', 'dimension.decision', 'dimension.severity', 'dimension.overall']),
     label: z.string()
   }).strict(),
   timeRangeWeeks: z.union([z.literal(4), z.literal(12), z.literal(26)]),
   grain: z.literal('week'),
+  filters: z.array(z.object({ field: z.enum(['integration', 'model', 'environment', 'enforcePolicy', 'decision', 'severity']), operator: z.literal('equals'), value: z.string() }).strict()).max(8),
   visual: widgetVisualSchema,
   interpretation: z.array(z.string()),
   unsupportedRequests: z.array(z.string())
@@ -124,7 +125,7 @@ export const widgetGenerationResponseSchema = z.object({
   series: z.array(widgetSeriesSchema),
   query: z.object({
     naturalLanguage: z.string(),
-    semanticPlan: z.object({ metricId: z.string(), dimensionId: z.string(), timeRangeWeeks: z.number(), grain: z.literal('week'), policyPack: z.literal('eu-ai-act-2024-1689') }).strict(),
+    semanticPlan: z.object({ metricId: z.string(), dimensionId: z.string(), timeRangeWeeks: z.number(), grain: z.literal('week'), policyPack: z.literal('eu-ai-act-2024-1689'), filters: z.array(z.object({ field: z.string(), operator: z.literal('equals'), value: z.string() }).strict()) }).strict(),
     elasticsearchDsl: z.record(z.unknown())
   }).strict(),
   summary: z.object({

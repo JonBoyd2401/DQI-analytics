@@ -16,6 +16,9 @@ A user describes an EU AI Act-oriented KPI, dimension, time window, chart, palet
 - [x] Prompt-to-widget compiler with allowlisted metrics, dimensions, and styles
 - [x] EU AI Act policy-pack identifier and reporting disclaimer
 - [x] Visible natural-language → semantic plan → query conversion
+- [x] Passed, blocked, and review decision reporting
+- [x] Named DQI Enforce policy attribution and filtering
+- [x] Model, integration, environment, decision, severity, and policy dimensions
 - [x] API and ECharts line widget
 - [x] Provenance inspector
 - [x] Invalid ID and extra-property rejection tests

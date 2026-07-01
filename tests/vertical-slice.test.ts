@@ -43,6 +43,22 @@ describe('natural-language DQI audit widgets', () => {
     expect(result.widget.visual.chartType).toBe('area');
     expect(result.query.semanticPlan.policyPack).toBe('eu-ai-act-2024-1689');
     expect(result.series).toHaveLength(4);
-    expect(result.provenance.recordsScanned).toBe(1248);
+    expect(result.provenance.recordsScanned).toBe(26208);
+  });
+
+  it('understands decision comparisons and named governance filters', () => {
+    const comparison = generateWidget({ prompt: 'Compare blocked vs passed AI usage by decision for the last 12 weeks as an area chart' }, now);
+    expect(comparison.widget.metric.id).toBe('metric.ai_requests');
+    expect(comparison.widget.dimension.id).toBe('dimension.decision');
+    expect(comparison.series.map((series) => series.label)).toEqual(['Passed', 'Blocked', 'Review']);
+
+    const policy = generateWidget({ prompt: 'Which DQI Enforce policy picked up critical events in production over the last 26 weeks as a donut chart' }, now);
+    expect(policy.widget.metric.id).toBe('metric.enforce_policy_hits');
+    expect(policy.widget.dimension.id).toBe('dimension.enforce_policy');
+    expect(policy.widget.filters).toEqual(expect.arrayContaining([
+      { field: 'environment', operator: 'equals', value: 'Production' },
+      { field: 'severity', operator: 'equals', value: 'Critical' }
+    ]));
+    expect(JSON.stringify(policy.query.elasticsearchDsl)).toContain('environment.keyword');
   });
 });

@@ -8,8 +8,9 @@ export function buildApp() {
   app.get('/health', async () => ({ status: 'ok', aiRequired: false }));
   app.get('/api/v1/semantic-model', async () => dqiAuditModel);
   app.get('/api/v1/demo/catalogue', async () => ({
-    metrics: ['AI usage', 'EU AI Act control finding rate', 'Assessment pass rate', 'High-risk AI events', 'Ungrounded response rate', 'Integration error rate'],
-    dimensions: ['Integration', 'Model', 'Environment', 'Overall'],
+    metrics: ['AI usage events', 'Passed events', 'Pass rate', 'Blocked events', 'Blocked rate', 'Events requiring review', 'DQI Enforce policy hits', 'EU AI Act control finding rate', 'Assessment pass rate', 'High-risk AI events', 'Ungrounded response rate', 'Integration error rate'],
+    dimensions: ['Integration', 'Model', 'Environment', 'DQI Enforce policy', 'Decision', 'Severity', 'Overall'],
+    policies: ['Prompt Injection Shield', 'PII & Data Leakage', 'EU AI Act High-Risk Use', 'Grounding & Citation', 'Toxicity & Harm', 'Model Allowlist'],
     visuals: ['Line', 'Area', 'Bar', 'Donut', 'KPI scorecard'],
     palettes: ['Aurora', 'Ocean', 'Sunset', 'Mono']
   }));

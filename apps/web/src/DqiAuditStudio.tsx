@@ -3,10 +3,10 @@ import ReactECharts from 'echarts-for-react';
 import { widgetGenerationResponseSchema, type WidgetGenerationResponse } from '@dqi/contracts';
 
 const examples = [
-  'Show the EU AI Act control finding rate by integration for the last 12 weeks as a smooth area chart with an aurora palette',
-  'Create a blue bar chart of assessment pass rate by model over the past 4 weeks titled "EU AI Act readiness"',
-  'Build a dark KPI scorecard for overall high-risk AI events across the last 26 weeks',
-  'Show ungrounded response rate by environment for 12 weeks as a minimal light line chart'
+  'Show blocked events by DQI Enforce policy for the last 12 weeks as a bar chart with an aurora palette',
+  'Compare blocked vs passed AI usage over the past 12 weeks as a smooth area chart with an ocean palette',
+  'Which DQI Enforce policy picked up critical events in production over the last 26 weeks? Use a dark donut chart',
+  'Show the ungrounded response rate for Qwen 3.6 by integration for 12 weeks as a minimal light line chart'
 ];
 
 const palettes = {
@@ -46,8 +46,8 @@ export function DqiAuditStudio() {
     <section className="prompt-panel"><div className="prompt-heading"><label htmlFor="audit-prompt">Describe your audit report</label><span>Governed prompt</span></div><textarea id="audit-prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={4} maxLength={1000}/><div className="prompt-actions"><small>{prompt.length} / 1,000</small><button onClick={generate} disabled={loading || prompt.trim().length < 10}>{loading ? 'Compiling audit query…' : '✦ Generate compliance widget'}</button></div></section>
     <div className="prompt-examples"><span>Example prompts</span>{examples.map((example, index) => <button key={example} onClick={() => setPrompt(example)}>0{index + 1}</button>)}</div>
     {error && <div className="dqi-error">{error}</div>}
-    {result ? <AuditWidget result={result}/> : <section className="blank-canvas"><div className="audit-glyph"><i/><i/><i/></div><div><h2>Your audit canvas is ready</h2><p>Ask about EU AI Act findings, assessment outcomes, high-risk events, model grounding, integrations, or AI usage.</p><button onClick={() => setPrompt(examples[1]!)}>Load a sample prompt →</button></div></section>}
-    <section className="audit-catalogue"><div><span className="kicker">GOVERNED SEMANTIC CATALOGUE</span><h2>What DQI understands</h2></div><Catalogue title="Audit metrics" items={['AI usage', 'EU AI Act control finding rate', 'Assessment pass rate', 'High-risk AI events', 'Ungrounded response rate', 'Integration error rate']}/><Catalogue title="Dimensions" items={['Integration', 'Model', 'Environment', 'Overall']}/><Catalogue title="Presentation" items={['Line · Area · Bar · Donut · KPI', 'Aurora · Ocean · Sunset · Mono', 'Dark or light theme']}/></section>
+    {result ? <AuditWidget result={result}/> : <section className="blank-canvas"><div className="audit-glyph"><i/><i/><i/></div><div><h2>Your audit canvas is ready</h2><p>Ask what was allowed, blocked, or sent for review; which Enforce policy acted; or break AI usage down by model, integration, environment, decision, and severity.</p><button onClick={() => setPrompt(examples[1]!)}>Load a sample prompt →</button></div></section>}
+    <section className="audit-catalogue"><div><span className="kicker">GOVERNED SEMANTIC CATALOGUE</span><h2>Ask DQI almost anything</h2></div><Catalogue title="Decisions & controls" items={['AI usage · Passed · Blocked · Review', 'Pass and block rates', 'Enforce policy hits', 'Assessment and grounding results']}/><Catalogue title="Break down or filter" items={['Integration · Model · Environment', 'Enforce policy · Decision · Severity', 'Production, staging or development', 'Named models, apps and policies']}/><Catalogue title="Presentation" items={['Line · Area · Bar · Donut · KPI', 'Aurora · Ocean · Sunset · Mono', '4, 12 or 26 weeks', 'Dark or light theme']}/></section>
   </main>;
 }
 
@@ -62,7 +62,7 @@ function AuditWidget({ result }: { result: WidgetGenerationResponse }) {
     if (widget.visual.chartType === 'donut') return { color: colors, tooltip: { trigger: 'item' }, legend: { show: widget.visual.showLegend, bottom: 0, textStyle: { color: muted } }, series: [{ type: 'pie', radius: ['53%', '76%'], center: ['50%', '43%'], padAngle: 3, itemStyle: { borderRadius: 8 }, label: { color: text }, data: series.map((item) => ({ name: item.label, value: item.points.at(-1)?.value ?? 0 })) }] };
     return { color: colors, tooltip: { trigger: 'axis' }, legend: { show: widget.visual.showLegend, top: 0, textStyle: { color: muted } }, grid: { left: 60, right: 20, top: 48, bottom: 40 }, xAxis: { type: 'category', data: series[0]?.points.map((point) => point.label), axisLabel: { color: muted }, axisLine: { lineStyle: { color: grid } } }, yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { color: grid } } }, series: series.map((item, index) => ({ name: item.label, type: widget.visual.chartType === 'bar' ? 'bar' : 'line', smooth: widget.visual.smooth, symbol: 'circle', symbolSize: 7, barMaxWidth: 28, areaStyle: widget.visual.chartType === 'area' ? { opacity: .17 } : undefined, lineStyle: { width: 3 }, data: item.points.map((point) => point.value), itemStyle: { color: colors[index % colors.length] } })) };
   }, [colors, light, series, widget]);
-  const lowerIsBetter = ['metric.policy_violation_rate', 'metric.high_risk_events', 'metric.ungrounded_response_rate', 'metric.integration_error_rate'].includes(widget.metric.id);
+  const lowerIsBetter = ['metric.blocked_events', 'metric.blocked_rate', 'metric.reviewed_events', 'metric.policy_violation_rate', 'metric.high_risk_events', 'metric.ungrounded_response_rate', 'metric.integration_error_rate'].includes(widget.metric.id);
   const favourable = lowerIsBetter ? summary.direction === 'down' : summary.direction === 'up';
   return <section className={`audit-widget ${light ? 'audit-widget-light' : ''}`}>
     <header><div><span className="kicker">COMPLIANCE WIDGET · V{widget.version}</span><h2>{widget.title}</h2><p>{widget.metric.label} · {widget.dimension.label} · Last {widget.timeRangeWeeks} complete weeks</p></div><div className={`trend ${favourable ? 'positive' : 'attention'}`}>{summary.direction === 'up' ? '↗' : summary.direction === 'down' ? '↘' : '→'} {Math.abs(summary.changePercent).toFixed(1)}%<small>vs previous week</small></div></header>

@@ -33,7 +33,9 @@ The featured use case is evidence exploration against the EU AI Act, Regulation 
 
 ## DQI audit starter pack
 
-Templates SHOULD cover AI requests, users or service identities, models, model versions, prompts and responses, assessments, integrations, environments, policy packs, control findings, grounding results, human-oversight events, incidents, risk classifications, and evidence lineage. Initial metrics include AI usage, EU AI Act control finding rate, assessment pass rate, high-risk AI events, ungrounded response rate, and integration error rate. Every policy mapping requires organisation-specific legal and governance review.
+Templates SHOULD cover AI requests, users or service identities, models, model versions, prompts and responses, assessments, integrations, environments, Enforce policies, pass/block/review decisions, severity, policy packs, control findings, grounding results, human-oversight events, incidents, risk classifications, and evidence lineage. Initial metrics include AI usage, passed and blocked events, pass and block rates, review volumes, DQI Enforce policy hits, EU AI Act control finding rate, assessment pass rate, high-risk AI events, ungrounded response rate, and integration error rate. Every policy mapping requires organisation-specific legal and governance review.
+
+Natural-language filtering MUST support governed references to named models, integrations, environments, Enforce policies, decisions, and severity levels. Unrecognised language MUST fall back to safe defaults or be reported as unsupported; it MUST NOT become executable query syntax.
 
 ## Non-goals for MVP
 

@@ -15,6 +15,8 @@ Open `http://localhost:5173`. The API runs on `http://localhost:3001`. Try promp
 
 > Show the EU AI Act control finding rate by integration for the last 12 weeks as a smooth area chart with an aurora palette.
 
+The governed language compiler also understands DQI usage outcomes and filters. For example: “Which DQI Enforce policy picked up critical events in production?”, “Compare blocked vs passed AI usage by decision”, or “Show the block rate for Qwen 3.6 in the Developer Assistant.”
+
 ## Deploy the demo to Render
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/JonBoyd2401/DQI-analytics)
