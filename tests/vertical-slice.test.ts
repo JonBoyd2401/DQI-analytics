@@ -36,6 +36,16 @@ describe('safe calculation foundation', () => {
 });
 
 describe('natural-language DQI audit widgets', () => {
+  it('only introduces a date histogram for an explicit time trend', () => {
+    const categorical = generateWidget({ prompt: 'Show blocked events by business unit for the last 12 weeks as a bar chart' });
+    expect(categorical.widget.grain).toBe('none');
+    expect(JSON.stringify(categorical.query.elasticsearchDsl)).not.toContain('date_histogram');
+
+    const trend = generateWidget({ prompt: 'Trend blocked events over time for the last 12 weeks as a line chart' });
+    expect(trend.widget.grain).toBe('week');
+    expect(JSON.stringify(trend.query.elasticsearchDsl)).toContain('date_histogram');
+  });
+
   it('compiles an EU AI Act prompt into a governed query and visual result', () => {
     const result = generateWidget({ prompt: 'Show EU AI Act policy violations by model for the last 12 weeks as an area chart with an ocean palette' }, now);
     expect(result.widget.metric.id).toBe('metric.policy_violation_rate');

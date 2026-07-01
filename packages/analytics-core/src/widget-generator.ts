@@ -325,7 +325,7 @@ export function interpretWidgetPrompt(raw: unknown, proposal?: QwenSemanticPropo
   return generatedWidgetSchema.parse({
     id: randomUUID(), version: '1.0', title: customTitle(prompt) ?? `${metric.label} by ${dimension.label}`,
     metric: { id: metricId, label: metric.label, format: metric.format },
-    dimension: { id: dimensionId, label: dimension.label }, timeRangeWeeks: weeks, grain: 'week', filters,
+    dimension: { id: dimensionId, label: dimension.label }, timeRangeWeeks: weeks, grain: intent === 'trend' ? 'week' : 'none', filters,
     visual,
     interpretation: [
       `Intent: ${intent.replace(/_/g, ' ')}`,
@@ -350,12 +350,20 @@ function buildWidget(widget: GeneratedWidget, prompt: string, now: Date, proposa
   const field = dimensions[widget.dimension.id].field;
   const filteredRows = database.rows.filter((row) => widget.filters.every((filter) => String(row[filter.field]) === filter.value));
   const keys = field ? [...new Set(filteredRows.map((row) => String(row[field])))] : ['Overall'];
-  const series = keys.map((key) => ({
+  const trendSeries = keys.map((key) => ({
     key: key.toLowerCase().replace(/[^a-z0-9]+/g, '-'), label: key,
     points: periods.map((period) => {
       const rows = filteredRows.filter((row) => row.week === period && (!field || String(row[field]) === key));
       return { period, label: new Date(period).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }), value: Number(metricValue(widget.metric.id, rows).toFixed(2)) };
     })
+  }));
+  const series = widget.grain === 'week' ? trendSeries : keys.map((key) => ({
+    key: key.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+    label: key,
+    points: [(() => {
+      const rows = filteredRows.filter((row) => periods.includes(row.week) && (!field || String(row[field]) === key));
+      return { period: periods.at(-1)!, label: key, value: Number(metricValue(widget.metric.id, rows).toFixed(2)) };
+    })()]
   }));
   const allCurrent = filteredRows.filter((row) => row.week === periods.at(-1));
   const allPrevious = filteredRows.filter((row) => row.week === periods.at(-2));
@@ -367,16 +375,16 @@ function buildWidget(widget: GeneratedWidget, prompt: string, now: Date, proposa
     widget, series,
     query: {
       naturalLanguage: prompt,
-      semanticPlan: { metricId: widget.metric.id, dimensionId: widget.dimension.id, intent, timeRangeWeeks: widget.timeRangeWeeks, grain: 'week', policyPack: 'eu-ai-act-2024-1689', filters: widget.filters },
+      semanticPlan: { metricId: widget.metric.id, dimensionId: widget.dimension.id, intent, timeRangeWeeks: widget.timeRangeWeeks, grain: widget.grain, policyPack: 'eu-ai-act-2024-1689', filters: widget.filters },
       elasticsearchDsl: {
         size: 0,
         query: { bool: { filter: [{ term: { policy_pack: 'eu-ai-act-2024-1689' } }, ...widget.filters.map((filter) => ({ term: { [`${filter.field}.keyword`]: filter.value } })), { range: { event_timestamp: { gte: `now-${widget.timeRangeWeeks}w/w`, lt: 'now/w' } } }] } },
-        aggs: {
+        aggs: widget.grain === 'week' ? {
           by_week: {
             date_histogram: { field: 'event_timestamp', calendar_interval: 'week' },
             aggs: { by_dimension: { terms: { field: `${String(dimensions[widget.dimension.id].field ?? 'overall')}.keyword`, size: 30 } } }
           }
-        }
+        } : { by_dimension: { terms: { field: `${String(dimensions[widget.dimension.id].field ?? 'overall')}.keyword`, size: 30 } } }
       }
     },
     semanticEngine: {

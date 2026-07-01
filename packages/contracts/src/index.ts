@@ -130,7 +130,7 @@ export const generatedWidgetSchema = z.object({
     label: z.string()
   }).strict(),
   timeRangeWeeks: z.union([z.literal(4), z.literal(12), z.literal(26)]),
-  grain: z.literal('week'),
+  grain: z.enum(['none', 'week']),
   filters: z.array(z.object({
     field: z.enum(['integration', 'model', 'environment', 'enforcePolicy', 'decision', 'severity', 'riskTier', 'region', 'businessUnit', 'userRole', 'dataClass', 'regulation', 'control', 'vendor', 'system']),
     operator: z.literal('equals'),
@@ -157,7 +157,7 @@ export const widgetGenerationResponseSchema = z.object({
       dimensionId: z.string(),
       intent: z.enum(['trend', 'breakdown', 'comparison', 'top_n', 'exception_review', 'coverage_report']),
       timeRangeWeeks: z.number(),
-      grain: z.literal('week'),
+      grain: z.enum(['none', 'week']),
       policyPack: z.literal('eu-ai-act-2024-1689'),
       filters: z.array(z.object({ field: z.string(), operator: z.literal('equals'), value: z.string() }).strict())
     }).strict(),
