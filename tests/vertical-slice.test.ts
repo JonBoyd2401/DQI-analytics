@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compileQuery, dqiAuditModel, evaluate, explain, generateWidget, normalizeCompleteWeeks, planQuery, refineWidget, runAnalytics, SyntheticConnector, type Expression } from '@dqi/analytics-core';
+import { compileQuery, dqiAuditModel, evaluate, explain, generateWidget, interpretWidgetPrompt, normalizeCompleteWeeks, planQuery, refineWidget, runAnalytics, SyntheticConnector, type Expression } from '@dqi/analytics-core';
 
 const validRequest = { metricIds: ['metric.ai_requests'], dimensionIds: ['dimension.integration'], time: { fieldId: 'dimension.event_timestamp', range: 'last_12_complete_weeks', grain: 'week' }, visualisationHint: 'line' };
 const now = new Date('2026-07-01T10:00:00.000Z');
@@ -96,5 +96,32 @@ describe('natural-language DQI audit widgets', () => {
     expect(injection.widget.metric.id).toBe('metric.prompt_injection_attempts');
     expect(injection.widget.dimension.id).toBe('dimension.enforce_policy');
     expect(JSON.stringify(injection.query.elasticsearchDsl)).toContain('model.keyword');
+  });
+
+  it('maps custom wording to the closest governed catalogue entry', () => {
+    const custom = generateWidget({ prompt: 'How many privacy leaks are happening across teams in prod during the last month? make it a bar chart' }, now);
+    expect(custom.widget.metric.id).toBe('metric.pii_exposure_attempts');
+    expect(custom.widget.dimension.id).toBe('dimension.business_unit');
+    expect(custom.widget.filters).toEqual(expect.arrayContaining([{ field: 'environment', operator: 'equals', value: 'Production' }]));
+    expect(custom.widget.timeRangeWeeks).toBe(4);
+  });
+
+  it('uses a validated Qwen proposal to choose the closest catalogue ids', () => {
+    const widget = interpretWidgetPrompt(
+      { prompt: 'Build me the audit story for risky Qwen behaviour by department' },
+      {
+        metricId: 'metric.model_drift_score',
+        dimensionId: 'dimension.business_unit',
+        intent: 'trend',
+        timeRangeWeeks: 26,
+        filters: [{ field: 'vendor', value: 'Qwen' }],
+        confidence: 0.91,
+        rationale: 'Risky behaviour is closest to model drift, and department maps to business unit.'
+      }
+    );
+    expect(widget.metric.id).toBe('metric.model_drift_score');
+    expect(widget.dimension.id).toBe('dimension.business_unit');
+    expect(widget.filters).toEqual(expect.arrayContaining([{ field: 'vendor', operator: 'equals', value: 'Qwen' }]));
+    expect(widget.interpretation.join(' ')).toContain('Qwen rationale');
   });
 });

@@ -15,6 +15,16 @@ type FilterField = GeneratedWidget['filters'][number]['field'];
 type Intent = WidgetGenerationResponse['query']['semanticPlan']['intent'];
 type MetricDefinition = { label: string; format: GeneratedWidget['metric']['format']; aliases: string[]; calculation: string; lowerIsBetter?: boolean };
 type DimensionDefinition = { label: string; aliases: string[]; field?: keyof DemoAggregateRow };
+export type QwenSemanticProposal = {
+  metricId?: string;
+  dimensionId?: string;
+  intent?: string;
+  timeRangeWeeks?: number;
+  filters?: { field: string; value: string }[];
+  visual?: Partial<GeneratedWidget['visual']>;
+  confidence?: number;
+  rationale?: string;
+};
 
 const metrics: Record<MetricId, MetricDefinition> = {
   'metric.ai_requests': { label: 'AI usage events', format: 'integer', aliases: ['total ai usage events', 'ai usage events', 'ai usage', 'ai requests', 'requests', 'usage', 'interactions', 'activity volume'], calculation: 'SUM(ai_requests)' },
@@ -24,26 +34,26 @@ const metrics: Record<MetricId, MetricDefinition> = {
   'metric.blocked_rate': { label: 'Blocked rate', format: 'percentage', aliases: ['blocked rate', 'block rate', 'percentage blocked', 'denial rate'], calculation: 'SUM(blocked_events) / SUM(all_events) * 100', lowerIsBetter: true },
   'metric.reviewed_events': { label: 'Events requiring review', format: 'integer', aliases: ['events requiring review', 'reviewed events', 'manual review', 'needs review', 'human review queue'], calculation: 'SUM(ai_requests) WHERE decision = Review', lowerIsBetter: true },
   'metric.enforce_policy_hits': { label: 'DQI Enforce policy hits', format: 'integer', aliases: ['which dqi enforce policy', 'enforce policy hits', 'policy picked it up', 'policy hits', 'policies triggered', 'triggered policies', 'policy activations'], calculation: 'SUM(ai_requests) WHERE enforce_policy != No policy match' },
-  'metric.policy_violation_rate': { label: 'EU AI Act control finding rate', format: 'percentage', aliases: ['eu ai act finding rate', 'control finding rate', 'policy violation rate', 'policy violations', 'violations', 'findings rate', 'control findings'], calculation: 'SUM(policy_violations) / SUM(ai_requests) * 100', lowerIsBetter: true },
+  'metric.policy_violation_rate': { label: 'EU AI Act control finding rate', format: 'percentage', aliases: ['eu ai act finding rate', 'control finding rate', 'policy violation rate', 'policy violations', 'violations', 'findings rate', 'control findings', 'failed controls', 'control failures', 'non compliance', 'compliance failures', 'issues found'], calculation: 'SUM(policy_violations) / SUM(ai_requests) * 100', lowerIsBetter: true },
   'metric.assessment_pass_rate': { label: 'Assessment pass rate', format: 'percentage', aliases: ['assessment pass rate', 'assessment results', 'assessments', 'control assessment pass rate'], calculation: 'SUM(assessments_passed) / SUM(assessments) * 100' },
-  'metric.high_risk_events': { label: 'High-risk AI events', format: 'integer', aliases: ['high-risk events', 'high risk events', 'critical events', 'risk events', 'high risk usage'], calculation: 'SUM(high_risk_events)', lowerIsBetter: true },
+  'metric.high_risk_events': { label: 'High-risk AI events', format: 'integer', aliases: ['high-risk events', 'high risk events', 'critical events', 'risk events', 'high risk usage', 'red flags', 'risky usage', 'dangerous usage'], calculation: 'SUM(high_risk_events)', lowerIsBetter: true },
   'metric.high_risk_usage_rate': { label: 'High-risk usage rate', format: 'percentage', aliases: ['high-risk usage rate', 'high risk usage rate', 'percentage high risk', 'rate of high risk use'], calculation: 'SUM(high_risk_events) / SUM(ai_requests) * 100', lowerIsBetter: true },
   'metric.ungrounded_response_rate': { label: 'Ungrounded response rate', format: 'percentage', aliases: ['ungrounded response rate', 'ungrounded responses', 'hallucination rate', 'hallucinations', 'grounding failures', 'citation failures'], calculation: 'SUM(ungrounded_responses) / SUM(ai_requests) * 100', lowerIsBetter: true },
   'metric.integration_error_rate': { label: 'Integration error rate', format: 'percentage', aliases: ['integration error rate', 'integration errors', 'failed integrations', 'errors', 'connector failures'], calculation: 'SUM(integration_errors) / SUM(ai_requests) * 100', lowerIsBetter: true },
-  'metric.prompt_injection_attempts': { label: 'Prompt injection attempts', format: 'integer', aliases: ['prompt injection attempts', 'prompt injections', 'jailbreak attempts', 'adversarial prompts'], calculation: 'SUM(prompt_injection_attempts)', lowerIsBetter: true },
-  'metric.pii_exposure_attempts': { label: 'PII exposure attempts', format: 'integer', aliases: ['pii exposure attempts', 'pii leakage attempts', 'data leakage attempts', 'privacy leakage', 'personal data exposure'], calculation: 'SUM(pii_exposure_attempts)', lowerIsBetter: true },
+  'metric.prompt_injection_attempts': { label: 'Prompt injection attempts', format: 'integer', aliases: ['prompt injection attempts', 'prompt injections', 'jailbreak attempts', 'adversarial prompts', 'jailbreaks', 'injection attacks', 'prompt attacks', 'malicious prompts'], calculation: 'SUM(prompt_injection_attempts)', lowerIsBetter: true },
+  'metric.pii_exposure_attempts': { label: 'PII exposure attempts', format: 'integer', aliases: ['pii exposure attempts', 'pii leakage attempts', 'data leakage attempts', 'privacy leakage', 'personal data exposure', 'privacy leaks', 'data leaks', 'pii leaks', 'leakage', 'personal information leaks'], calculation: 'SUM(pii_exposure_attempts)', lowerIsBetter: true },
   'metric.total_tokens': { label: 'Total tokens', format: 'integer', aliases: ['total tokens', 'token usage', 'tokens consumed', 'token volume'], calculation: 'SUM(total_tokens)' },
   'metric.estimated_cost': { label: 'Estimated model cost', format: 'currency', aliases: ['estimated cost', 'model cost', 'ai spend', 'token cost', 'cost of usage'], calculation: 'SUM(estimated_cost)', lowerIsBetter: true },
-  'metric.avg_latency_ms': { label: 'Average latency', format: 'duration', aliases: ['average latency', 'avg latency', 'mean latency', 'response time', 'latency'], calculation: 'SUM(latency_ms_total) / SUM(ai_requests)', lowerIsBetter: true },
-  'metric.p95_latency_ms': { label: 'P95 latency', format: 'duration', aliases: ['p95 latency', '95th percentile latency', 'slowest responses', 'tail latency'], calculation: 'SUM(latency_ms_p95_total) / SUM(ai_requests)', lowerIsBetter: true },
+  'metric.avg_latency_ms': { label: 'Average latency', format: 'duration', aliases: ['average latency', 'avg latency', 'mean latency', 'response time', 'latency', 'speed', 'how fast'], calculation: 'SUM(latency_ms_total) / SUM(ai_requests)', lowerIsBetter: true },
+  'metric.p95_latency_ms': { label: 'P95 latency', format: 'duration', aliases: ['p95 latency', '95th percentile latency', 'slowest responses', 'tail latency', 'slow responses', 'worst latency'], calculation: 'SUM(latency_ms_p95_total) / SUM(ai_requests)', lowerIsBetter: true },
   'metric.unique_users': { label: 'Unique users', format: 'integer', aliases: ['unique users', 'active users', 'distinct users', 'user count'], calculation: 'SUM(unique_users)' },
   'metric.human_overrides': { label: 'Human overrides', format: 'integer', aliases: ['human overrides', 'overrides', 'manual overrides', 'operator overrides'], calculation: 'SUM(human_overrides)', lowerIsBetter: true },
   'metric.override_rate': { label: 'Override rate', format: 'percentage', aliases: ['override rate', 'human override rate', 'manual override percentage'], calculation: 'SUM(human_overrides) / SUM(ai_requests) * 100', lowerIsBetter: true },
   'metric.audit_coverage_rate': { label: 'Audit coverage rate', format: 'percentage', aliases: ['audit coverage', 'audit coverage rate', 'logging coverage', 'coverage report', 'coverage'], calculation: 'SUM(assessments) / SUM(ai_requests) * 100' },
   'metric.evidence_completeness_rate': { label: 'Evidence completeness rate', format: 'percentage', aliases: ['evidence completeness', 'evidence completeness rate', 'missing evidence', 'audit evidence completeness'], calculation: 'SUM(evidence_complete) / SUM(ai_requests) * 100' },
-  'metric.model_drift_score': { label: 'Model drift score', format: 'score', aliases: ['model drift', 'drift score', 'model drift score', 'behaviour drift', 'model stability'], calculation: 'SUM(model_drift_score_total) / SUM(ai_requests)', lowerIsBetter: true },
+  'metric.model_drift_score': { label: 'Model drift score', format: 'score', aliases: ['model drift', 'drift score', 'model drift score', 'behaviour drift', 'model stability', 'behavior drift', 'drifting', 'quality drift'], calculation: 'SUM(model_drift_score_total) / SUM(ai_requests)', lowerIsBetter: true },
   'metric.exception_approvals': { label: 'Exception approvals', format: 'integer', aliases: ['exception approvals', 'approved exceptions', 'policy exceptions', 'temporary exceptions'], calculation: 'SUM(exception_approvals)', lowerIsBetter: true },
-  'metric.unresolved_findings': { label: 'Unresolved findings', format: 'integer', aliases: ['unresolved findings', 'open findings', 'outstanding findings', 'unresolved issues'], calculation: 'SUM(unresolved_findings)', lowerIsBetter: true },
+  'metric.unresolved_findings': { label: 'Unresolved findings', format: 'integer', aliases: ['unresolved findings', 'open findings', 'outstanding findings', 'unresolved issues', 'open issues', 'open risks', 'still open'], calculation: 'SUM(unresolved_findings)', lowerIsBetter: true },
   'metric.retention_breaches': { label: 'Retention breaches', format: 'integer', aliases: ['retention breaches', 'retention failures', 'purpose limitation breaches', 'retention policy breaches'], calculation: 'SUM(retention_breaches)', lowerIsBetter: true },
   'metric.sla_breach_rate': { label: 'SLA breach rate', format: 'percentage', aliases: ['sla breach rate', 'sla breaches', 'service level breaches', 'operational breach rate'], calculation: 'SUM(sla_breaches) / SUM(ai_requests) * 100', lowerIsBetter: true }
 };
@@ -57,11 +67,11 @@ const dimensions: Record<DimensionId, DimensionDefinition> = {
   'dimension.severity': { label: 'Severity', aliases: ['by severity', 'severity level', 'risk severity'], field: 'severity' },
   'dimension.risk_tier': { label: 'Risk tier', aliases: ['by risk tier', 'risk tier', 'risk category', 'risk classification'], field: 'riskTier' },
   'dimension.region': { label: 'Region', aliases: ['by region', 'region', 'geo', 'geography', 'country region'], field: 'region' },
-  'dimension.business_unit': { label: 'Business unit', aliases: ['by business unit', 'business unit', 'department', 'team', 'function'], field: 'businessUnit' },
+  'dimension.business_unit': { label: 'Business unit', aliases: ['by business unit', 'business unit', 'department', 'departments', 'team', 'teams', 'function', 'business area', 'area'], field: 'businessUnit' },
   'dimension.user_role': { label: 'User role', aliases: ['by user role', 'user role', 'persona', 'role'], field: 'userRole' },
   'dimension.data_class': { label: 'Data class', aliases: ['by data class', 'data class', 'data classification', 'sensitivity'], field: 'dataClass' },
   'dimension.regulation': { label: 'Regulation', aliases: ['by regulation', 'regulation', 'framework', 'standard'], field: 'regulation' },
-  'dimension.control': { label: 'Control', aliases: ['by control', 'control area', 'control family', 'audit control'], field: 'control' },
+  'dimension.control': { label: 'Control', aliases: ['by control', 'control area', 'control family', 'audit control', 'guardrail', 'guardrails', 'requirement'], field: 'control' },
   'dimension.vendor': { label: 'Model vendor', aliases: ['by vendor', 'vendor', 'provider', 'model provider'], field: 'vendor' },
   'dimension.system': { label: 'DQI system', aliases: ['by system', 'dqi system', 'platform component', 'capability'], field: 'system' },
   'dimension.overall': { label: 'Overall', aliases: ['overall', 'total', 'no split', 'single kpi'] }
@@ -82,11 +92,35 @@ export const semanticCatalogue = {
   }
 };
 
+function normalise(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9.]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function words(text: string): string[] {
+  const stop = new Set(['show', 'give', 'tell', 'me', 'the', 'a', 'an', 'of', 'for', 'to', 'in', 'on', 'with', 'and', 'or', 'over', 'last', 'past', 'by', 'as', 'chart', 'report']);
+  return normalise(text).split(' ').filter((word) => word.length > 1 && !stop.has(word));
+}
+
+function aliasScore(text: string, textWords: Set<string>, alias: string): number {
+  const cleanAlias = normalise(alias);
+  if (!cleanAlias) return 0;
+  if (text.includes(cleanAlias)) return 100 + cleanAlias.length;
+  const aliasWords = words(cleanAlias);
+  if (aliasWords.length === 0) return 0;
+  const hits = aliasWords.filter((word) => textWords.has(word)).length;
+  if (hits === 0) return 0;
+  const ratio = hits / aliasWords.length;
+  return ratio === 1 ? 70 + aliasWords.length * 4 : ratio >= 0.5 ? 35 + hits * 5 : 12 + hits * 3;
+}
+
 function firstMatch<T extends string>(text: string, catalogue: Record<T, { aliases: string[] }>, fallback: T): { id: T; confidence: number } {
-  const matches = (Object.entries(catalogue) as [T, { aliases: string[] }][])
-    .flatMap(([id, item]) => item.aliases.filter((alias) => text.includes(alias)).map((alias) => ({ id, length: alias.length })));
-  matches.sort((left, right) => right.length - left.length);
-  return matches[0] ? { id: matches[0].id, confidence: Math.min(0.98, 0.58 + matches[0].length / 60) } : { id: fallback, confidence: 0.52 };
+  const cleanText = normalise(text);
+  const textWords = new Set(words(cleanText));
+  const scored = (Object.entries(catalogue) as [T, { aliases: string[] }][])
+    .map(([id, item]) => ({ id, score: Math.max(...item.aliases.map((alias) => aliasScore(cleanText, textWords, alias)), 0) }))
+    .sort((left, right) => right.score - left.score);
+  const best = scored[0];
+  return best && best.score > 0 ? { id: best.id, confidence: Math.min(0.98, 0.5 + best.score / 180) } : { id: fallback, confidence: 0.52 };
 }
 
 function total(rows: DemoAggregateRow[], field: keyof DemoAggregateRow): number {
@@ -156,6 +190,7 @@ const filterValues: { field: FilterField; value: string; aliases: string[] }[] =
   { field: 'severity', value: 'High', aliases: ['high severity', 'high findings'] },
   { field: 'riskTier', value: 'High-risk', aliases: ['high-risk', 'high risk tier', 'high risk category'] }
 ];
+filterValues.push({ field: 'environment', value: 'Production', aliases: ['prod', 'in prod', 'production'] });
 
 function promptFilters(text: string): GeneratedWidget['filters'] {
   const seen = new Set<string>();
@@ -173,7 +208,7 @@ function promptFilters(text: string): GeneratedWidget['filters'] {
 
 function requestedWeeks(text: string): 4 | 12 | 26 {
   const found = text.match(/(?:last|past|over)\s+(\d+)\s+weeks?/i);
-  const value = found?.[1] ? Number(found[1]) : text.includes('quarter') ? 12 : text.includes('half year') || text.includes('six months') ? 26 : 12;
+  const value = found?.[1] ? Number(found[1]) : text.includes('last month') || text.includes('past month') ? 4 : text.includes('quarter') ? 12 : text.includes('half year') || text.includes('six months') ? 26 : 12;
   return value <= 4 ? 4 : value <= 12 ? 12 : 26;
 }
 
@@ -225,27 +260,72 @@ function defaultMetricForIntent(text: string, intent: Intent): MetricId {
   return 'metric.ai_requests';
 }
 
-export function interpretWidgetPrompt(raw: unknown): GeneratedWidget {
+function validatedMetricId(candidate?: string): MetricId | undefined {
+  return candidate && candidate in metrics ? candidate as MetricId : undefined;
+}
+
+function validatedDimensionId(candidate?: string): DimensionId | undefined {
+  return candidate && candidate in dimensions ? candidate as DimensionId : undefined;
+}
+
+function validatedIntent(candidate?: string): Intent | undefined {
+  return ['trend', 'breakdown', 'comparison', 'top_n', 'exception_review', 'coverage_report'].includes(String(candidate)) ? candidate as Intent : undefined;
+}
+
+function validatedWeeks(candidate?: number): 4 | 12 | 26 | undefined {
+  return candidate === 4 || candidate === 12 || candidate === 26 ? candidate : undefined;
+}
+
+function validatedFilters(candidates: QwenSemanticProposal['filters'] = []): GeneratedWidget['filters'] {
+  const fields = new Set<FilterField>(['integration', 'model', 'environment', 'enforcePolicy', 'decision', 'severity', 'riskTier', 'region', 'businessUnit', 'userRole', 'dataClass', 'regulation', 'control', 'vendor', 'system']);
+  const allowed = new Set(filterValues.map((filter) => `${filter.field}:${filter.value}`));
+  const seen = new Set<string>();
+  return candidates
+    .filter((candidate): candidate is { field: FilterField; value: string } => fields.has(candidate.field as FilterField) && allowed.has(`${candidate.field}:${candidate.value}`))
+    .map((candidate) => ({ field: candidate.field, operator: 'equals' as const, value: candidate.value }))
+    .filter((filter) => {
+      const key = `${filter.field}:${filter.value}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 12);
+}
+
+function visualWithProposal(visual: GeneratedWidget['visual'], proposal?: QwenSemanticProposal): GeneratedWidget['visual'] {
+  return {
+    ...visual,
+    chartType: proposal?.visual?.chartType ?? visual.chartType,
+    palette: proposal?.visual?.palette ?? visual.palette,
+    theme: proposal?.visual?.theme ?? visual.theme
+  };
+}
+
+export function interpretWidgetPrompt(raw: unknown, proposal?: QwenSemanticProposal): GeneratedWidget {
   const { prompt } = widgetPromptSchema.parse(raw);
   const text = prompt.toLowerCase();
-  const intent = inferIntent(text);
+  const intent = validatedIntent(proposal?.intent) ?? inferIntent(text);
   const metricMatch = firstMatch(text, metrics, defaultMetricForIntent(text, intent));
+  const proposedMetric = validatedMetricId(proposal?.metricId);
   const fallbackDimension: DimensionId = intent === 'trend' || text.includes('overall') ? 'dimension.overall'
     : text.includes('eu ai act') ? 'dimension.control'
       : intent === 'exception_review' ? 'dimension.enforce_policy'
         : intent === 'coverage_report' ? 'dimension.regulation'
           : 'dimension.integration';
   const dimensionMatch = firstMatch(text, dimensions, fallbackDimension);
-  const visual = visualFromPrompt(text);
-  const weeks = requestedWeeks(text);
-  const filters = promptFilters(text);
+  const proposedDimension = validatedDimensionId(proposal?.dimensionId);
+  const visual = visualWithProposal(visualFromPrompt(text), proposal);
+  const weeks = validatedWeeks(proposal?.timeRangeWeeks) ?? requestedWeeks(text);
+  const filters = [...validatedFilters(proposal?.filters), ...promptFilters(text)].filter((filter, index, list) => list.findIndex((item) => item.field === filter.field && item.value === filter.value) === index).slice(0, 12);
   const unsupportedRequests = ['3d', 'map', 'scatter', 'forecast', 'raw prompt export'].filter((term) => text.includes(term)).map((term) => `${term} is not enabled in this governed demo`);
-  const metric = metrics[metricMatch.id];
-  const dimension = dimensions[dimensionMatch.id];
+  const metricId = proposedMetric ?? metricMatch.id;
+  const dimensionId = proposedDimension ?? dimensionMatch.id;
+  const metric = metrics[metricId];
+  const dimension = dimensions[dimensionId];
   return generatedWidgetSchema.parse({
     id: randomUUID(), version: '1.0', title: customTitle(prompt) ?? `${metric.label} by ${dimension.label}`,
-    metric: { id: metricMatch.id, label: metric.label, format: metric.format },
-    dimension: { id: dimensionMatch.id, label: dimension.label }, timeRangeWeeks: weeks, grain: 'week', filters,
+    metric: { id: metricId, label: metric.label, format: metric.format },
+    dimension: { id: dimensionId, label: dimension.label }, timeRangeWeeks: weeks, grain: 'week', filters,
     visual,
     interpretation: [
       `Intent: ${intent.replace(/_/g, ' ')}`,
@@ -253,7 +333,8 @@ export function interpretWidgetPrompt(raw: unknown): GeneratedWidget {
       `${dimension.label} breakdown`,
       `Last ${weeks} complete weeks`,
       ...filters.map((filter) => `${filter.field}: ${filter.value}`),
-      `Qwen proposal confidence: ${Math.round(((metricMatch.confidence + dimensionMatch.confidence) / 2) * 100)}%`,
+      `Qwen proposal confidence: ${Math.round((proposal?.confidence ?? ((metricMatch.confidence + dimensionMatch.confidence) / 2)) * 100)}%`,
+      ...(proposal?.rationale ? [`Qwen rationale: ${proposal.rationale}`] : []),
       'EU AI Act audit policy',
       `${visual.chartType} chart`,
       `${visual.palette} palette`,
@@ -263,7 +344,7 @@ export function interpretWidgetPrompt(raw: unknown): GeneratedWidget {
   });
 }
 
-function buildWidget(widget: GeneratedWidget, prompt: string, now: Date): WidgetGenerationResponse {
+function buildWidget(widget: GeneratedWidget, prompt: string, now: Date, proposal?: QwenSemanticProposal): WidgetGenerationResponse {
   const database = new SyntheticDqiAuditDatabase(now);
   const periods = [...new Set(database.rows.map((row) => row.week))].slice(-widget.timeRangeWeeks);
   const field = dimensions[widget.dimension.id].field;
@@ -299,9 +380,9 @@ function buildWidget(widget: GeneratedWidget, prompt: string, now: Date): Widget
       }
     },
     semanticEngine: {
-      mode: 'qwen-proposal-validated',
+      mode: proposal ? 'qwen-proposal-validated' : 'deterministic-fallback',
       modelId: 'JonBoyd2401/Qwen3.6',
-      confidence: 0.88,
+      confidence: Math.max(0, Math.min(1, proposal?.confidence ?? 0.68)),
       validated: true,
       safeguards: semanticCatalogue.engine.safeguards
     },
@@ -318,6 +399,70 @@ function buildWidget(widget: GeneratedWidget, prompt: string, now: Date): Widget
 export function generateWidget(raw: unknown, now = new Date('2026-07-01T10:00:00.000Z')): WidgetGenerationResponse {
   const { prompt } = widgetPromptSchema.parse(raw);
   return buildWidget(interpretWidgetPrompt(raw), prompt, now);
+}
+
+function qwenSystemPrompt(): string {
+  const metricCatalogue = Object.entries(metrics).map(([id, metric]) => ({ id, label: metric.label, aliases: metric.aliases }));
+  const dimensionCatalogue = Object.entries(dimensions).map(([id, dimension]) => ({ id, label: dimension.label, aliases: dimension.aliases }));
+  const filters = filterValues.map(({ field, value }) => ({ field, value }));
+  return [
+    'You map natural-language DQI audit questions to the closest governed semantic catalogue entries.',
+    'Return JSON only. Never return Elasticsearch DSL, scripts, formulas, prose outside JSON, or identifiers not present below.',
+    'Choose one metricId and one dimensionId. Infer intent, timeRangeWeeks (4, 12, or 26), filters, and optional chartType/palette/theme.',
+    'If wording is vague, select the closest business meaning rather than requiring exact phrases.',
+    'JSON shape: {"metricId":"metric.x","dimensionId":"dimension.x","intent":"trend|breakdown|comparison|top_n|exception_review|coverage_report","timeRangeWeeks":12,"filters":[{"field":"region","value":"EU"}],"visual":{"chartType":"line","palette":"aurora","theme":"dark"},"confidence":0.0,"rationale":"short explanation"}',
+    `Metrics: ${JSON.stringify(metricCatalogue)}`,
+    `Dimensions: ${JSON.stringify(dimensionCatalogue)}`,
+    `Allowed filters: ${JSON.stringify(filters)}`
+  ].join('\n');
+}
+
+function parseQwenContent(content: string): QwenSemanticProposal | undefined {
+  const cleaned = content.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
+  try {
+    const parsed = JSON.parse(cleaned);
+    return parsed && typeof parsed === 'object' ? parsed as QwenSemanticProposal : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export async function requestQwenSemanticProposal(prompt: string, signal?: AbortSignal): Promise<QwenSemanticProposal | undefined> {
+  const baseUrl = process.env.QWEN_BASE_URL?.replace(/\/+$/, '');
+  if (!baseUrl) return undefined;
+  const apiKey = process.env.QWEN_API_KEY;
+  const init: RequestInit = {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {})
+    },
+    body: JSON.stringify({
+      model: process.env.QWEN_MODEL ?? 'JonBoyd2401/Qwen3.6',
+      temperature: 0.1,
+      messages: [
+        { role: 'system', content: qwenSystemPrompt() },
+        { role: 'user', content: prompt }
+      ]
+    })
+  };
+  if (signal) init.signal = signal;
+  const response = await fetch(`${baseUrl}/v1/chat/completions`, init);
+  if (!response.ok) throw new Error(`Qwen semantic mapper returned HTTP ${response.status}`);
+  const payload = await response.json() as { choices?: { message?: { content?: string } }[] };
+  const content = payload.choices?.[0]?.message?.content;
+  return content ? parseQwenContent(content) : undefined;
+}
+
+export async function generateWidgetWithQwen(raw: unknown, now = new Date('2026-07-01T10:00:00.000Z'), signal?: AbortSignal): Promise<WidgetGenerationResponse> {
+  const { prompt } = widgetPromptSchema.parse(raw);
+  let proposal: QwenSemanticProposal | undefined;
+  try {
+    proposal = await requestQwenSemanticProposal(prompt, signal);
+  } catch {
+    proposal = undefined;
+  }
+  return buildWidget(interpretWidgetPrompt(raw, proposal), prompt, now, proposal);
 }
 
 export function refineWidget(raw: unknown, now = new Date('2026-07-01T10:00:00.000Z')): WidgetGenerationResponse {

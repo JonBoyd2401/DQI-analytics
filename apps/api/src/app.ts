@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import { dqiAuditModel, dqiDemoCatalogue, generateWidget, refineWidget, runAnalytics, semanticCatalogue, SyntheticConnector } from '@dqi/analytics-core';
+import { dqiAuditModel, dqiDemoCatalogue, generateWidgetWithQwen, refineWidget, runAnalytics, semanticCatalogue, SyntheticConnector } from '@dqi/analytics-core';
 
 export function buildApp() {
   const app = Fastify({ logger: true, bodyLimit: 32_768 });
@@ -22,7 +22,7 @@ export function buildApp() {
   }));
   app.post('/api/v1/widgets/generate', async (request, reply) => {
     try {
-      return generateWidget(request.body);
+      return await generateWidgetWithQwen(request.body);
     } catch (error) {
       request.log.warn({ error }, 'widget_prompt_rejected');
       return reply.code(400).send({ error: 'INVALID_WIDGET_PROMPT', message: error instanceof Error ? error.message : 'Invalid prompt' });
