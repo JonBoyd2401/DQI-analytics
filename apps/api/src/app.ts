@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import { dqiAuditModel, dqiDemoCatalogue, generateWidgetWithQwen, refineWidget, runAnalytics, semanticCatalogue, SyntheticConnector } from '@dqi/analytics-core';
+import { dqiAuditModel, dqiDemoCatalogue, generateWidgetWithQwen, refineWidgetWithQwen, runAnalytics, semanticCatalogue, SyntheticConnector } from '@dqi/analytics-core';
 
 export function buildApp() {
   const app = Fastify({ logger: true, bodyLimit: 32_768 });
@@ -30,7 +30,7 @@ export function buildApp() {
   });
   app.post('/api/v1/widgets/refine', async (request, reply) => {
     try {
-      return refineWidget(request.body);
+      return await refineWidgetWithQwen(request.body);
     } catch (error) {
       request.log.warn({ error }, 'widget_refinement_rejected');
       return reply.code(400).send({ error: 'INVALID_WIDGET_REFINEMENT', message: error instanceof Error ? error.message : 'Invalid view edit' });
