@@ -85,12 +85,24 @@ export const widgetPromptSchema = z.object({
   prompt: z.string().trim().min(10).max(1000)
 }).strict();
 
+export const widgetRefinementRequestSchema = z.object({
+  originalPrompt: z.string().trim().min(10).max(4000),
+  editPrompt: z.string().trim().min(3).max(500)
+}).strict();
+
 export const widgetVisualSchema = z.object({
   chartType: z.enum(['line', 'area', 'bar', 'donut', 'kpi']),
   palette: z.enum(['aurora', 'ocean', 'sunset', 'mono']),
   theme: z.enum(['dark', 'light']),
   showLegend: z.boolean(),
-  smooth: z.boolean()
+  legendPosition: z.enum(['top', 'bottom', 'right']),
+  smooth: z.boolean(),
+  xAxisPosition: z.enum(['top', 'bottom']),
+  xAxisLabelRotation: z.union([z.literal(0), z.literal(30), z.literal(45), z.literal(90)]),
+  showXAxis: z.boolean(),
+  showYAxis: z.boolean(),
+  showGrid: z.boolean(),
+  showPoints: z.boolean()
 }).strict();
 
 export const generatedWidgetSchema = z.object({
@@ -146,5 +158,6 @@ export const widgetGenerationResponseSchema = z.object({
 }).strict();
 
 export type WidgetPrompt = z.infer<typeof widgetPromptSchema>;
+export type WidgetRefinementRequest = z.infer<typeof widgetRefinementRequestSchema>;
 export type GeneratedWidget = z.infer<typeof generatedWidgetSchema>;
 export type WidgetGenerationResponse = z.infer<typeof widgetGenerationResponseSchema>;

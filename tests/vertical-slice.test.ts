@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compileQuery, dqiAuditModel, evaluate, explain, generateWidget, normalizeCompleteWeeks, planQuery, runAnalytics, SyntheticConnector, type Expression } from '@dqi/analytics-core';
+import { compileQuery, dqiAuditModel, evaluate, explain, generateWidget, normalizeCompleteWeeks, planQuery, refineWidget, runAnalytics, SyntheticConnector, type Expression } from '@dqi/analytics-core';
 
 const validRequest = { metricIds: ['metric.ai_requests'], dimensionIds: ['dimension.integration'], time: { fieldId: 'dimension.event_timestamp', range: 'last_12_complete_weeks', grain: 'week' }, visualisationHint: 'line' };
 const now = new Date('2026-07-01T10:00:00.000Z');
@@ -60,5 +60,19 @@ describe('natural-language DQI audit widgets', () => {
       { field: 'severity', operator: 'equals', value: 'Critical' }
     ]));
     expect(JSON.stringify(policy.query.elasticsearchDsl)).toContain('environment.keyword');
+  });
+
+  it('refines visual styling without changing the governed report meaning', () => {
+    const originalPrompt = 'Show blocked events by DQI Enforce policy for the last 12 weeks as a smooth area chart with an aurora palette';
+    const original = generateWidget({ prompt: originalPrompt }, now);
+    const refined = refineWidget({
+      originalPrompt,
+      editPrompt: 'Change to sunset bars, put the legend on the right, move x axis to the top, rotate labels 45 degrees, hide grid and remove points'
+    }, now);
+    expect(refined.widget.metric.id).toBe(original.widget.metric.id);
+    expect(refined.widget.dimension.id).toBe(original.widget.dimension.id);
+    expect(refined.widget.filters).toEqual(original.widget.filters);
+    expect(refined.widget.visual).toMatchObject({ chartType: 'bar', palette: 'sunset', legendPosition: 'right', xAxisPosition: 'top', xAxisLabelRotation: 45, showGrid: false, showPoints: false });
+    expect(refined.series).toEqual(original.series);
   });
 });

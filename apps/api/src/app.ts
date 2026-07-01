@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import { dqiAuditModel, generateWidget, runAnalytics, SyntheticConnector } from '@dqi/analytics-core';
+import { dqiAuditModel, generateWidget, refineWidget, runAnalytics, SyntheticConnector } from '@dqi/analytics-core';
 
 export function buildApp() {
   const app = Fastify({ logger: true, bodyLimit: 32_768 });
@@ -20,6 +20,14 @@ export function buildApp() {
     } catch (error) {
       request.log.warn({ error }, 'widget_prompt_rejected');
       return reply.code(400).send({ error: 'INVALID_WIDGET_PROMPT', message: error instanceof Error ? error.message : 'Invalid prompt' });
+    }
+  });
+  app.post('/api/v1/widgets/refine', async (request, reply) => {
+    try {
+      return refineWidget(request.body);
+    } catch (error) {
+      request.log.warn({ error }, 'widget_refinement_rejected');
+      return reply.code(400).send({ error: 'INVALID_WIDGET_REFINEMENT', message: error instanceof Error ? error.message : 'Invalid view edit' });
     }
   });
   app.post('/api/v1/analytics/query', async (request, reply) => {

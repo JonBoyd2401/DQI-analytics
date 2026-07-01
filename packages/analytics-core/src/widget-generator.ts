@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { generatedWidgetSchema, widgetGenerationResponseSchema, widgetPromptSchema, type GeneratedWidget, type WidgetGenerationResponse } from '@dqi/contracts';
+import { generatedWidgetSchema, widgetGenerationResponseSchema, widgetPromptSchema, widgetRefinementRequestSchema, type GeneratedWidget, type WidgetGenerationResponse } from '@dqi/contracts';
 import { SyntheticDqiAuditDatabase, type DemoAggregateRow } from './demo-database.js';
 
 type MetricId = GeneratedWidget['metric']['id'];
@@ -91,14 +91,38 @@ function customTitle(prompt: string): string | undefined {
   return prompt.match(/(?:title(?:d)?|called)\s+["“']([^"”']+)["”']/i)?.[1]?.trim();
 }
 
+function visualFromPrompt(text: string, current?: GeneratedWidget['visual']): GeneratedWidget['visual'] {
+  const chartType = text.includes('donut') || text.includes('pie') ? 'donut'
+    : text.includes('bar') ? 'bar' : text.includes('area') ? 'area'
+      : text.includes('kpi') || text.includes('scorecard') || text.includes('big number') ? 'kpi'
+        : text.includes('line chart') || text.includes('use lines') ? 'line' : current?.chartType ?? 'line';
+  const palette = text.includes('sunset') || text.includes('warm') || text.includes('orange') || text.includes('red') || text.includes('pink') ? 'sunset'
+    : text.includes('ocean') || text.includes('blue') ? 'ocean'
+      : text.includes('mono') || text.includes('minimal') || text.includes('grey') || text.includes('grayscale') ? 'mono'
+        : text.includes('aurora') || text.includes('green') || text.includes('purple') || text.includes('teal') ? 'aurora' : current?.palette ?? 'aurora';
+  const rotationMatch = text.match(/(?:rotate|angle)(?:\s+(?:the|x-axis|x axis|labels))*\s+(30|45|90)(?:\s*degrees?)?/);
+  const rotation = text.includes('vertical labels') ? 90 : rotationMatch?.[1] ? Number(rotationMatch[1]) as 30 | 45 | 90 : text.includes('horizontal labels') ? 0 : current?.xAxisLabelRotation ?? 0;
+  return {
+    chartType, palette,
+    theme: text.includes('light theme') || text.includes('light background') ? 'light' : text.includes('dark theme') || text.includes('dark background') ? 'dark' : current?.theme ?? 'dark',
+    showLegend: text.includes('hide legend') || text.includes('remove legend') ? false : text.includes('show legend') ? true : current?.showLegend ?? true,
+    legendPosition: text.includes('legend on the right') || text.includes('legend to the right') || text.includes('right legend') ? 'right' : text.includes('legend at the bottom') || text.includes('bottom legend') ? 'bottom' : text.includes('legend at the top') || text.includes('top legend') ? 'top' : current?.legendPosition ?? 'top',
+    smooth: text.includes('straight lines') || text.includes('sharp lines') ? false : text.includes('smooth') || text.includes('curved') ? true : current?.smooth ?? true,
+    xAxisPosition: text.includes('x axis at the top') || text.includes('x-axis at the top') || text.includes('move x axis to the top') ? 'top' : text.includes('x axis at the bottom') || text.includes('x-axis at the bottom') ? 'bottom' : current?.xAxisPosition ?? 'bottom',
+    xAxisLabelRotation: rotation,
+    showXAxis: text.includes('hide x axis') || text.includes('hide x-axis') ? false : text.includes('show x axis') || text.includes('show x-axis') ? true : current?.showXAxis ?? true,
+    showYAxis: text.includes('hide y axis') || text.includes('hide y-axis') ? false : text.includes('show y axis') || text.includes('show y-axis') ? true : current?.showYAxis ?? true,
+    showGrid: text.includes('hide grid') || text.includes('remove grid') || text.includes('no grid') ? false : text.includes('show grid') ? true : current?.showGrid ?? true,
+    showPoints: text.includes('hide points') || text.includes('remove points') || text.includes('no points') ? false : text.includes('show points') ? true : current?.showPoints ?? true
+  };
+}
+
 export function interpretWidgetPrompt(raw: unknown): GeneratedWidget {
   const { prompt } = widgetPromptSchema.parse(raw);
   const text = prompt.toLowerCase();
   const metricId = firstMatch(text, metrics, 'metric.ai_requests');
   const dimensionId = firstMatch(text, dimensions, text.includes('overall') ? 'dimension.overall' : 'dimension.integration');
-  const chartType = text.includes('donut') || text.includes('pie') ? 'donut' : text.includes('bar') ? 'bar' : text.includes('area') ? 'area' : text.includes('kpi') || text.includes('scorecard') || text.includes('big number') ? 'kpi' : 'line';
-  const palette = text.includes('sunset') || text.includes('warm') || text.includes('orange') ? 'sunset' : text.includes('ocean') || text.includes('blue') ? 'ocean' : text.includes('mono') || text.includes('minimal') ? 'mono' : 'aurora';
-  const theme = text.includes('light') ? 'light' : 'dark';
+  const visual = visualFromPrompt(text);
   const weeks = requestedWeeks(text);
   const filters = promptFilters(text);
   const unsupportedRequests = ['3d', 'map', 'scatter', 'forecast'].filter((term) => text.includes(term)).map((term) => `${term} visualisation is not enabled in this governed demo`);
@@ -108,15 +132,13 @@ export function interpretWidgetPrompt(raw: unknown): GeneratedWidget {
     id: randomUUID(), version: '1.0', title: customTitle(prompt) ?? `${metric.label} by ${dimension.label}`,
     metric: { id: metricId, label: metric.label, format: metric.format },
     dimension: { id: dimensionId, label: dimension.label }, timeRangeWeeks: weeks, grain: 'week', filters,
-    visual: { chartType, palette, theme, showLegend: !text.includes('hide legend'), smooth: !text.includes('straight lines') },
-    interpretation: [metric.label, `${dimension.label} breakdown`, `Last ${weeks} complete weeks`, ...filters.map((filter) => `${filter.field}: ${filter.value}`), 'EU AI Act audit policy', `${chartType} chart`, `${palette} palette`, `${theme} theme`],
+    visual,
+    interpretation: [metric.label, `${dimension.label} breakdown`, `Last ${weeks} complete weeks`, ...filters.map((filter) => `${filter.field}: ${filter.value}`), 'EU AI Act audit policy', `${visual.chartType} chart`, `${visual.palette} palette`, `${visual.theme} theme`],
     unsupportedRequests
   });
 }
 
-export function generateWidget(raw: unknown, now = new Date('2026-07-01T10:00:00.000Z')): WidgetGenerationResponse {
-  const { prompt } = widgetPromptSchema.parse(raw);
-  const widget = interpretWidgetPrompt(raw);
+function buildWidget(widget: GeneratedWidget, prompt: string, now: Date): WidgetGenerationResponse {
   const database = new SyntheticDqiAuditDatabase(now);
   const periods = [...new Set(database.rows.map((row) => row.week))].slice(-widget.timeRangeWeeks);
   const field = dimensions[widget.dimension.id].field;
@@ -153,4 +175,22 @@ export function generateWidget(raw: unknown, now = new Date('2026-07-01T10:00:00
       disclaimer: 'Demonstration audit events are entirely fabricated and contain no real users, prompts, customers, or model activity.'
     }
   });
+}
+
+export function generateWidget(raw: unknown, now = new Date('2026-07-01T10:00:00.000Z')): WidgetGenerationResponse {
+  const { prompt } = widgetPromptSchema.parse(raw);
+  return buildWidget(interpretWidgetPrompt(raw), prompt, now);
+}
+
+export function refineWidget(raw: unknown, now = new Date('2026-07-01T10:00:00.000Z')): WidgetGenerationResponse {
+  const { originalPrompt, editPrompt } = widgetRefinementRequestSchema.parse(raw);
+  const base = interpretWidgetPrompt({ prompt: originalPrompt });
+  const edited = generatedWidgetSchema.parse({
+    ...base,
+    id: randomUUID(),
+    title: customTitle(editPrompt) ?? base.title,
+    visual: visualFromPrompt(editPrompt.toLowerCase(), base.visual),
+    interpretation: [...base.interpretation.filter((item) => !item.endsWith('palette') && !item.endsWith('theme') && !item.endsWith('chart')), `Edited view: ${editPrompt}`]
+  });
+  return buildWidget(edited, `${originalPrompt}\nFollow-up view edit: ${editPrompt}`, now);
 }

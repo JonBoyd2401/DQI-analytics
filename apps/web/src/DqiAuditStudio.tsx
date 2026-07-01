@@ -9,6 +9,8 @@ const examples = [
   'Show the ungrounded response rate for Qwen 3.6 by integration for 12 weeks as a minimal light line chart'
 ];
 
+const editExamples = ['Change to a sunset palette and use bars', 'Move the x axis to the top and rotate labels 45 degrees', 'Use a light theme, hide grid lines and remove points', 'Put the legend on the right and use smooth purple lines'];
+
 const palettes = {
   aurora: ['#51e4bb', '#718dff', '#d879ff', '#ffd166'],
   ocean: ['#38bdf8', '#2563eb', '#22d3ee', '#818cf8'],
@@ -27,7 +29,10 @@ export function DqiAuditStudio() {
   const [prompt, setPrompt] = useState(examples[0]!);
   const [result, setResult] = useState<WidgetGenerationResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
   const [error, setError] = useState('');
+  const [originalPrompt, setOriginalPrompt] = useState('');
+  const [editPrompt, setEditPrompt] = useState(editExamples[0]!);
 
   async function generate() {
     setLoading(true); setError('');
@@ -35,9 +40,24 @@ export function DqiAuditStudio() {
       const response = await fetch('/api/v1/widgets/generate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ prompt }) });
       if (!response.ok) throw new Error('Add a supported audit metric, dimension, and visual style to the prompt.');
       setResult(widgetGenerationResponseSchema.parse(await response.json()));
+      setOriginalPrompt(prompt);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'The audit widget could not be generated.');
     } finally { setLoading(false); }
+  }
+
+  async function refineView() {
+    setEditLoading(true); setError('');
+    try {
+      const response = await fetch('/api/v1/widgets/refine', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ originalPrompt, editPrompt }) });
+      if (!response.ok) throw new Error('That view edit could not be applied within the governed visual options.');
+      const refined = widgetGenerationResponseSchema.parse(await response.json());
+      setResult(refined);
+      setOriginalPrompt(refined.query.naturalLanguage);
+      setEditPrompt('');
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'The view could not be refined.');
+    } finally { setEditLoading(false); }
   }
 
   return <main className="dqi-shell">
@@ -46,6 +66,7 @@ export function DqiAuditStudio() {
     <section className="prompt-panel"><div className="prompt-heading"><label htmlFor="audit-prompt">Describe your audit report</label><span>Governed prompt</span></div><textarea id="audit-prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={4} maxLength={1000}/><div className="prompt-actions"><small>{prompt.length} / 1,000</small><button onClick={generate} disabled={loading || prompt.trim().length < 10}>{loading ? 'Compiling audit query…' : '✦ Generate compliance widget'}</button></div></section>
     <div className="prompt-examples"><span>Example prompts</span>{examples.map((example, index) => <button key={example} onClick={() => setPrompt(example)}>0{index + 1}</button>)}</div>
     {error && <div className="dqi-error">{error}</div>}
+    {result && <section className="refine-panel"><div><span className="kicker">LIVE VIEW EDITOR</span><label htmlFor="view-edit">Refine this report with another prompt</label><small>KPI, filters, and evidence stay fixed while the visual updates.</small></div><div className="refine-input"><input id="view-edit" value={editPrompt} onChange={(event) => setEditPrompt(event.target.value)} placeholder="e.g. Make it blue, move the x axis to the top…"/><button onClick={refineView} disabled={editLoading || editPrompt.trim().length < 3}>{editLoading ? 'Applying…' : 'Apply edit ↗'}</button></div><div className="edit-chips">{editExamples.map((example) => <button key={example} onClick={() => setEditPrompt(example)}>{example}</button>)}</div></section>}
     {result ? <AuditWidget result={result}/> : <section className="blank-canvas"><div className="audit-glyph"><i/><i/><i/></div><div><h2>Your audit canvas is ready</h2><p>Ask what was allowed, blocked, or sent for review; which Enforce policy acted; or break AI usage down by model, integration, environment, decision, and severity.</p><button onClick={() => setPrompt(examples[1]!)}>Load a sample prompt →</button></div></section>}
     <section className="audit-catalogue"><div><span className="kicker">GOVERNED SEMANTIC CATALOGUE</span><h2>Ask DQI almost anything</h2></div><Catalogue title="Decisions & controls" items={['AI usage · Passed · Blocked · Review', 'Pass and block rates', 'Enforce policy hits', 'Assessment and grounding results']}/><Catalogue title="Break down or filter" items={['Integration · Model · Environment', 'Enforce policy · Decision · Severity', 'Production, staging or development', 'Named models, apps and policies']}/><Catalogue title="Presentation" items={['Line · Area · Bar · Donut · KPI', 'Aurora · Ocean · Sunset · Mono', '4, 12 or 26 weeks', 'Dark or light theme']}/></section>
   </main>;
@@ -60,7 +81,8 @@ function AuditWidget({ result }: { result: WidgetGenerationResponse }) {
     const muted = light ? '#64748b' : '#8396af';
     const grid = light ? '#dbe3ee' : '#22334c';
     if (widget.visual.chartType === 'donut') return { color: colors, tooltip: { trigger: 'item' }, legend: { show: widget.visual.showLegend, bottom: 0, textStyle: { color: muted } }, series: [{ type: 'pie', radius: ['53%', '76%'], center: ['50%', '43%'], padAngle: 3, itemStyle: { borderRadius: 8 }, label: { color: text }, data: series.map((item) => ({ name: item.label, value: item.points.at(-1)?.value ?? 0 })) }] };
-    return { color: colors, tooltip: { trigger: 'axis' }, legend: { show: widget.visual.showLegend, top: 0, textStyle: { color: muted } }, grid: { left: 60, right: 20, top: 48, bottom: 40 }, xAxis: { type: 'category', data: series[0]?.points.map((point) => point.label), axisLabel: { color: muted }, axisLine: { lineStyle: { color: grid } } }, yAxis: { type: 'value', axisLabel: { color: muted }, splitLine: { lineStyle: { color: grid } } }, series: series.map((item, index) => ({ name: item.label, type: widget.visual.chartType === 'bar' ? 'bar' : 'line', smooth: widget.visual.smooth, symbol: 'circle', symbolSize: 7, barMaxWidth: 28, areaStyle: widget.visual.chartType === 'area' ? { opacity: .17 } : undefined, lineStyle: { width: 3 }, data: item.points.map((point) => point.value), itemStyle: { color: colors[index % colors.length] } })) };
+    const legend = widget.visual.legendPosition === 'right' ? { right: 0, top: 'middle', orient: 'vertical' } : widget.visual.legendPosition === 'bottom' ? { bottom: 0 } : { top: 0 };
+    return { color: colors, animationDurationUpdate: 450, tooltip: { trigger: 'axis' }, legend: { show: widget.visual.showLegend, ...legend, textStyle: { color: muted } }, grid: { left: 60, right: widget.visual.legendPosition === 'right' ? 150 : 20, top: widget.visual.xAxisPosition === 'top' ? 75 : 48, bottom: widget.visual.legendPosition === 'bottom' ? 70 : 48 }, xAxis: { show: widget.visual.showXAxis, type: 'category', position: widget.visual.xAxisPosition, data: series[0]?.points.map((point) => point.label), axisLabel: { color: muted, rotate: widget.visual.xAxisLabelRotation }, axisLine: { lineStyle: { color: grid } } }, yAxis: { show: widget.visual.showYAxis, type: 'value', axisLabel: { color: muted }, splitLine: { show: widget.visual.showGrid, lineStyle: { color: grid } } }, series: series.map((item, index) => ({ name: item.label, type: widget.visual.chartType === 'bar' ? 'bar' : 'line', smooth: widget.visual.smooth, symbol: widget.visual.showPoints ? 'circle' : 'none', symbolSize: 7, barMaxWidth: 28, areaStyle: widget.visual.chartType === 'area' ? { opacity: .17 } : undefined, lineStyle: { width: 3 }, data: item.points.map((point) => point.value), itemStyle: { color: colors[index % colors.length] } })) };
   }, [colors, light, series, widget]);
   const lowerIsBetter = ['metric.blocked_events', 'metric.blocked_rate', 'metric.reviewed_events', 'metric.policy_violation_rate', 'metric.high_risk_events', 'metric.ungrounded_response_rate', 'metric.integration_error_rate'].includes(widget.metric.id);
   const favourable = lowerIsBetter ? summary.direction === 'down' : summary.direction === 'up';

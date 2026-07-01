@@ -1,0 +1,14 @@
+.refine-panel { margin-bottom: 16px; padding: 18px 20px; border: 1px solid #355277; background: linear-gradient(120deg, #10233a, #0d1d31); border-radius: 16px; box-shadow: 0 18px 45px #0003; }
+.refine-panel > div:first-child { display: grid; gap: 3px; }
+.refine-panel label { font: 600 17px Manrope; }
+.refine-panel small { color: #7188a2; }
+.refine-input { display: flex; gap: 10px; margin-top: 13px; }
+.refine-input input { flex: 1; min-width: 0; border: 1px solid #314965; background: #071421; color: #e8eff8; border-radius: 10px; padding: 12px 14px; outline: none; }
+.refine-input input:focus { border-color: #57e3bc; box-shadow: 0 0 0 3px #57e3bc18; }
+.refine-input button { border: 0; border-radius: 10px; background: #809dff; color: #07111f; font-weight: 700; padding: 0 17px; cursor: pointer; }
+.refine-input button:disabled { opacity: .5; }
+.edit-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+.edit-chips button { border: 1px solid #304762; background: #0a1829; color: #8298b2; border-radius: 99px; padding: 5px 9px; font-size: 9px; cursor: pointer; }
+.edit-chips button:hover { border-color: #57e3bc; color: #57e3bc; }
+.audit-widget { transition: background .35s, color .35s, border-color .35s; }
+@media (max-width: 560px) { .refine-input { flex-direction: column; } .refine-input button { padding: 12px; } }

@@ -17,6 +17,8 @@ Open `http://localhost:5173`. The API runs on `http://localhost:3001`. Try promp
 
 The governed language compiler also understands DQI usage outcomes and filters. For example: “Which DQI Enforce policy picked up critical events in production?”, “Compare blocked vs passed AI usage by decision”, or “Show the block rate for Qwen 3.6 in the Developer Assistant.”
 
+After generating a report, the live view editor accepts follow-up prompts such as “change to sunset bars,” “move the x axis to the top and rotate labels 45 degrees,” or “use a light theme and hide grid lines.” These refinements preserve the governed KPI, filters, query evidence, and calculated series.
+
 ## Deploy the demo to Render
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/JonBoyd2401/DQI-analytics)
