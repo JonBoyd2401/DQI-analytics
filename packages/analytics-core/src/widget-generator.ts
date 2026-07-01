@@ -475,7 +475,9 @@ export async function generateWidgetWithQwen(raw: unknown, now = new Date('2026-
 
 export async function refineWidgetWithQwen(raw: unknown, now = new Date('2026-07-01T10:00:00.000Z'), signal?: AbortSignal): Promise<WidgetGenerationResponse> {
   const { originalPrompt, editPrompt } = widgetRefinementRequestSchema.parse(raw);
-  const prompt = `${originalPrompt.slice(-700)}\nLatest follow-up instruction (this overrides earlier conflicting choices): ${editPrompt}`;
+  const instruction = '\nLatest follow-up instruction (this overrides earlier conflicting choices): ';
+  const contextBudget = Math.max(0, 1000 - instruction.length - editPrompt.length);
+  const prompt = `${originalPrompt.slice(-contextBudget)}${instruction}${editPrompt}`;
   let proposal: QwenSemanticProposal | undefined;
   try {
     proposal = await requestQwenSemanticProposal(prompt, signal);

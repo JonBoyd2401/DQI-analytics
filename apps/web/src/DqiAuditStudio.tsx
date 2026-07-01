@@ -11,7 +11,7 @@ const examples = [
   'Show estimated model cost and p95 latency by vendor for confidential data over 12 weeks'
 ];
 
-const editExamples = ['Change to a sunset palette and use bars', 'Move the x axis to the top and rotate labels 45 degrees', 'Use a light theme, hide grid lines and remove points', 'Put the legend on the right and use smooth purple lines'];
+const editExamples = ['Instead show blocked rate by policy', 'Only include Production and EU', 'Change this to a 26-week trend', 'Use blue bars and rotate labels 45 degrees'];
 
 const guidedMetrics = ['AI requests', 'Blocked events', 'Passed events', 'Prompt injection attempts', 'PII exposure attempts', 'Unresolved findings', 'Estimated cost', 'P95 latency'];
 const guidedDimensions = ['Overall', 'Integration', 'DQI Enforce policy', 'Decision', 'Model', 'Business unit', 'Control', 'Region'];
@@ -48,6 +48,11 @@ function formatted(value: number, format: WidgetGenerationResponse['widget']['me
   return Math.round(value).toLocaleString('en-GB');
 }
 
+function friendlyError(reason: unknown, fallback: string) {
+  if (reason instanceof Error && reason.name === 'ZodError') return 'The report service has been updated. Refresh this page and try again.';
+  return reason instanceof Error && !reason.message.startsWith('[') ? reason.message : fallback;
+}
+
 export function DqiAuditStudio() {
   const [prompt, setPrompt] = useState(examples[0]!);
   const [result, setResult] = useState<WidgetGenerationResponse | null>(null);
@@ -71,7 +76,7 @@ export function DqiAuditStudio() {
       setResult(widgetGenerationResponseSchema.parse(await response.json()));
       setOriginalPrompt(prompt);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'The audit widget could not be generated.');
+      setError(friendlyError(reason, 'The audit widget could not be generated. Try a metric such as blocked events and a breakdown such as policy.'));
     } finally { setLoading(false); }
   }
 
@@ -79,13 +84,13 @@ export function DqiAuditStudio() {
     setEditLoading(true); setError('');
     try {
       const response = await fetch('/api/v1/widgets/refine', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ originalPrompt, editPrompt }) });
-      if (!response.ok) throw new Error('That follow-up could not be mapped to the governed semantic catalogue.');
+      if (!response.ok) throw new Error('Try naming what to change: metric, breakdown, filter, timeframe, or chart style. Your existing report will supply the rest.');
       const refined = widgetGenerationResponseSchema.parse(await response.json());
       setResult(refined);
       setOriginalPrompt(refined.query.naturalLanguage);
       setEditPrompt('');
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'The view could not be refined.');
+      setError(friendlyError(reason, 'The report could not be updated. Describe one change, such as “by policy”, “EU only”, or “use blue bars”.'));
     } finally { setEditLoading(false); }
   }
 
@@ -97,7 +102,7 @@ export function DqiAuditStudio() {
     <div className="prompt-examples"><span>Example prompts</span>{examples.map((example, index) => <button key={example} onClick={() => setPrompt(example)}>0{index + 1}</button>)}</div>
     <details className="capability-browser" open><summary>Explore everything you can ask</summary><p>Use your own wording. Qwen maps it to the closest governed metric, breakdown and filters.</p><div>{capabilities.map((group) => <section key={group.title}><strong>{group.title}</strong>{group.items.map((item) => <button key={item} onClick={() => setPrompt(`Show ${item.toLowerCase()} by integration for the last 12 weeks`)}>{item}</button>)}</section>)}</div><small>Prompt pattern: “Show [metric] by [breakdown], filtered to [value], over [time], as [visual style].” Exact wording is not required.</small></details>
     {error && <div className="dqi-error">{error}</div>}
-    {result && <section className="refine-panel"><div><span className="kicker">CONVERSATIONAL REPORT EDITOR</span><label htmlFor="view-edit">Tell Qwen what to change</label><small>Change the metric, breakdown, filters, timeframe, title, or visual style in your own words. Every suggestion is validated against the deterministic semantic layer.</small></div><div className="refine-input"><input id="view-edit" value={editPrompt} onChange={(event) => setEditPrompt(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !editLoading && editPrompt.trim().length >= 3) void refineView(); }} placeholder="e.g. Instead show blocked rate by policy for production, as blue bars"/><button onClick={refineView} disabled={editLoading || editPrompt.trim().length < 3}>{editLoading ? 'Applying…' : 'Apply edit →'}</button></div><div className="edit-chips">{editExamples.map((example) => <button key={example} onClick={() => setEditPrompt(example)}>{example}</button>)}</div></section>}
+    {result && <section className="refine-panel"><div><span className="kicker">CONVERSATIONAL REPORT EDITOR</span><label htmlFor="view-edit">Tell Qwen what to change</label><small>You only need to describe the change—not repeat the whole report. Try “by policy instead”, “EU only”, “make it a trend”, or “use blue bars”.</small></div><div className="refine-input"><input id="view-edit" value={editPrompt} onChange={(event) => setEditPrompt(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !editLoading && editPrompt.trim().length >= 3) void refineView(); }} placeholder="Describe only what should change…" aria-describedby="edit-guidance"/><button onClick={refineView} disabled={editLoading || editPrompt.trim().length < 3}>{editLoading ? 'Applying…' : 'Apply edit →'}</button></div><div id="edit-guidance" className="edit-guidance"><span>Try a change:</span><b>metric</b><b>breakdown</b><b>filter</b><b>timeframe</b><b>chart style</b></div><div className="edit-chips">{editExamples.map((example) => <button key={example} onClick={() => setEditPrompt(example)}>{example}</button>)}</div></section>}
     {result ? <AuditWidget result={result}/> : <section className="blank-canvas"><div className="audit-glyph"><i/><i/><i/></div><div><h2>Your audit canvas is ready</h2><p>Ask what was allowed, blocked, reviewed, overridden, drifting, incomplete, expensive, slow, or missing evidence; then split it by model, system, policy, control, region, business unit, role, risk tier, data class or regulation.</p><button onClick={() => setPrompt(examples[1]!)}>Load a sample prompt -&gt;</button></div></section>}
     <section className="audit-catalogue"><div><span className="kicker">GOVERNED SEMANTIC CATALOGUE</span><h2>Ask DQI almost anything</h2></div><Catalogue title="Governance metrics" items={["Usage · Passed · Blocked · Review", "Prompt injection · PII leakage · Retention breaches", "Model drift · Grounding · Evidence completeness", "Cost · Tokens · Latency · SLA breaches"]}/><Catalogue title="Break down or filter" items={["System · Model · Vendor · Integration", "Policy · Control · Regulation · Risk tier", "Region · Business unit · User role", "Environment · Decision · Data class"]}/><Catalogue title="Guardrails" items={["Qwen proposes semantic intent only", "Deterministic compiler builds ES/OpenSearch DSL", "Published catalogue identifiers only", "4, 12 or 26 complete weeks"]}/></section>
   </main>;

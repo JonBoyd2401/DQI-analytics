@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compileQuery, dqiAuditModel, evaluate, explain, generateWidget, interpretWidgetPrompt, normalizeCompleteWeeks, planQuery, refineWidget, runAnalytics, SyntheticConnector, type Expression } from '@dqi/analytics-core';
+import { compileQuery, dqiAuditModel, evaluate, explain, generateWidget, interpretWidgetPrompt, normalizeCompleteWeeks, planQuery, refineWidget, refineWidgetWithQwen, runAnalytics, SyntheticConnector, type Expression } from '@dqi/analytics-core';
 
 const validRequest = { metricIds: ['metric.ai_requests'], dimensionIds: ['dimension.integration'], time: { fieldId: 'dimension.event_timestamp', range: 'last_12_complete_weeks', grain: 'week' }, visualisationHint: 'line' };
 const now = new Date('2026-07-01T10:00:00.000Z');
@@ -36,6 +36,16 @@ describe('safe calculation foundation', () => {
 });
 
 describe('natural-language DQI audit widgets', () => {
+  it('keeps conversational follow-ups within the governed prompt budget', async () => {
+    const result = await refineWidgetWithQwen({
+      originalPrompt: `Show AI requests by integration for 12 weeks. ${'Earlier report context. '.repeat(150)}`,
+      editPrompt: 'by policy instead and use blue bars'
+    });
+    expect(result.query.naturalLanguage.length).toBeLessThanOrEqual(1000);
+    expect(result.widget.dimension.id).toBe('dimension.enforce_policy');
+    expect(result.widget.visual.palette).toBe('ocean');
+  });
+
   it('only introduces a date histogram for an explicit time trend', () => {
     const categorical = generateWidget({ prompt: 'Show blocked events by business unit for the last 12 weeks as a bar chart' });
     expect(categorical.widget.grain).toBe('none');
