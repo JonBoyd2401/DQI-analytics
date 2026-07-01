@@ -12,7 +12,7 @@ export function App() {
   const [data, setData] = useState<AnalyticsResponse | null>(null);
   const [error, setError] = useState('');
   useEffect(() => {
-    fetch('http://localhost:3001/api/v1/analytics/query', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(request) })
+    fetch('/api/v1/analytics/query', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(request) })
       .then(async (response) => { if (!response.ok) throw new Error(`Query failed (${response.status})`); return response.json(); })
       .then((value: unknown) => setData(analyticsResponseSchema.parse(value)))
       .catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'Query failed'));

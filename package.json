@@ -6,7 +6,7 @@
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev": "concurrently -n api,web -c cyan,magenta \"npm:dev -w @cx/api\" \"npm:dev -w @cx/web\"",
-    "build": "npm run build -ws --if-present",
+    "build": "npm run build --workspaces --if-present",
     "test": "vitest run",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint .",
