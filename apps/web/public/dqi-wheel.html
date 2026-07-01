@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>DQI Interactive 3D Wheel — 12 Dimensions</title>
+  <style>
+    :root {
+      --bg0:#08111f;
+      --bg1:#101b33;
+      --panel:#121d34e8;
+      --panel2:#0e1728f2;
+      --text:#f2f7ff;
+      --muted:#a9b8ce;
+      --line:#2a3f63;
+      --accent:#67e8f9;
+      --accent2:#a78bfa;
+      --shadow:0 24px 70px rgba(0,0,0,.45);
+      --radius:22px;
+      --rz:-6deg;
+      --tilt:58deg;
+    }
+    * { box-sizing:border-box; }
+    html { margin:0; min-height:100%; overflow-y:auto; -webkit-text-size-adjust:100%; }
+    body {
+      min-height:100%; margin:0; overflow-x:hidden; overflow-y:auto; -webkit-overflow-scrolling:touch;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 20% 12%, rgba(103,232,249,.22), transparent 30%),
+        radial-gradient(circle at 88% 20%, rgba(167,139,250,.18), transparent 27%),
+        linear-gradient(135deg, var(--bg0), var(--bg1) 55%, #090e1b);
+    }
+    .shell { min-height:100vh; min-height:100svh; display:flex; flex-direction:column; }
+    header {
+      display:flex; align-items:center; justify-content:space-between; gap:20px;
+      padding:22px clamp(18px, 4vw, 44px) 12px;
+    }
+    .brand { display:flex; align-items:center; gap:14px; min-width:260px; }
+    .brand-mark {
+      width:48px; height:48px; border-radius:16px;
+      background: conic-gradient(from 210deg, #67e8f9, #7dd3fc, #a78bfa, #67e8f9);
+      box-shadow:0 10px 35px rgba(103,232,249,.28);
+      position:relative; flex:0 0 auto;
+    }
+    .brand-mark:after {
+      content:""; position:absolute; inset:10px; border-radius:50%;
+      background:#0d1729; border:1px solid rgba(255,255,255,.25);
+    }
+    h1 { margin:0; font-size:clamp(24px, 3vw, 42px); letter-spacing:-.04em; line-height:1.04; }
+    .subtitle { margin-top:5px; color:var(--muted); font-size:14px; }
+    .pill-row { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+    .back-link {
+      display:inline-flex; align-items:center; border:1px solid rgba(103,232,249,.45);
+      border-radius:999px; color:#baf6ff; background:rgba(103,232,249,.08);
+      padding:8px 11px; text-decoration:none; font-size:12px; font-weight:750;
+    }
+    .back-link:hover, .back-link:focus-visible { background:rgba(103,232,249,.16); outline:none; border-color:#67e8f9; }
+    .pill {
+      border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.06);
+      color:#dce9fb; padding:8px 10px; border-radius:999px; font-size:12px; white-space:nowrap;
+    }
+    main {
+      display:grid; grid-template-columns:minmax(520px, 1.12fr) minmax(420px, .88fr);
+      gap:24px; padding:10px clamp(18px, 4vw, 44px) 32px;
+    }
+    .visual-card, .detail-card, .matrix-card {
+      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.035));
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:var(--radius); box-shadow:var(--shadow);
+      -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    }
+    .visual-card { padding:18px; position:relative; overflow:visible; min-height:670px; }
+    .visual-card:before {
+      content:""; position:absolute; left:-10%; right:-10%; bottom:-28%; height:48%;
+      background:radial-gradient(ellipse at center, rgba(103,232,249,.12), transparent 65%);
+      pointer-events:none;
+    }
+    .controls {
+      display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;
+      position:relative; z-index:5; margin-bottom:8px;
+    }
+    button, .std-filter {
+      border:1px solid rgba(255,255,255,.15); color:#eaf4ff; background:rgba(255,255,255,.07);
+      padding:10px 12px; border-radius:12px; cursor:pointer; transition:.18s ease; font-weight:650; font-size:13px;
+      -webkit-appearance:none; appearance:none;
+    }
+    button:hover, .std-filter:hover { transform:translateY(-1px); background:rgba(255,255,255,.12); border-color:rgba(103,232,249,.5); }
+    button.active, .std-filter.active { background:linear-gradient(135deg, rgba(103,232,249,.26), rgba(167,139,250,.22)); border-color:rgba(103,232,249,.7); }
+    .search {
+      flex:1 1 240px; min-width:180px; background:rgba(0,0,0,.16); border:1px solid rgba(255,255,255,.14);
+      color:var(--text); border-radius:12px; padding:11px 12px; outline:none; font-size:16px;
+    }
+    .search:focus { border-color:rgba(103,232,249,.75); box-shadow:0 0 0 4px rgba(103,232,249,.1); }
+    .scene {
+      position:relative; height:548px; display:grid; place-items:center; perspective:1150px; z-index:1;
+      user-select:none; cursor:grab; touch-action:pan-y; overscroll-behavior:contain;
+      overflow:visible;
+    }
+    .scene:active { cursor:grabbing; }
+    .wheel-stage {
+      width:min(96%, 650px); aspect-ratio:1/1; display:grid; place-items:center; overflow:visible;
+      transform-origin:50% 50%;
+      transform:rotateX(var(--tilt)) rotateZ(var(--rz)) translateZ(0);
+      transform-style:preserve-3d;
+      will-change:transform;
+      transition:transform .25s ease;
+      filter:drop-shadow(0 46px 30px rgba(0,0,0,.42));
+    }
+    #wheel { width:100%; height:100%; overflow:visible; display:block; }
+    .segment-group { transition:opacity .22s ease, filter .22s ease; }
+    .segment-face { stroke:rgba(255,255,255,.85); stroke-width:1.2; cursor:pointer; transition:filter .18s ease, opacity .18s ease; }
+    .segment-depth { opacity:.54; filter:brightness(.58); }
+    .segment-group.dimmed { opacity:.22; filter:saturate(.35); }
+    .segment-group:hover .segment-face, .segment-group.selected .segment-face { filter:brightness(1.17) drop-shadow(0 0 10px rgba(103,232,249,.7)); }
+    .seg-label { font-weight:800; font-size:16px; fill:#f8fbff; paint-order:stroke; stroke:rgba(0,0,0,.45); stroke-width:3px; pointer-events:none; }
+    .seg-sub { font-size:8px; letter-spacing:.09em; fill:rgba(245,250,255,.82); text-transform:uppercase; pointer-events:none; }
+    .center-disc { filter:drop-shadow(0 8px 14px rgba(0,0,0,.45)); cursor:pointer; }
+    .upright-card {
+      position:absolute; z-index:4; top:50%; left:50%; transform:translate(-50%, -50%);
+      width:180px; min-height:124px; border-radius:28px;
+      background:linear-gradient(180deg, rgba(12,24,44,.95), rgba(9,15,28,.96));
+      border:1px solid rgba(255,255,255,.16); display:grid; place-items:center; text-align:center;
+      box-shadow:0 18px 48px rgba(0,0,0,.45); pointer-events:none;
+    }
+    .upright-card strong { display:block; font-size:42px; letter-spacing:-.08em; }
+    .upright-card span { display:block; margin-top:3px; color:#bcd4ea; font-size:12px; text-transform:uppercase; letter-spacing:.12em; }
+    .hint {
+      color:#b6c6d9; font-size:13px; display:flex; gap:9px; align-items:center; justify-content:center;
+      padding:10px 12px; border:1px dashed rgba(255,255,255,.16); border-radius:16px; background:rgba(255,255,255,.04);
+      position:relative; z-index:5;
+    }
+    .right-stack { display:grid; grid-template-rows:auto auto; gap:24px; }
+    .detail-card { overflow:hidden; }
+    .detail-head {
+      display:flex; justify-content:space-between; gap:16px; align-items:flex-start;
+      padding:22px 22px 16px; background:linear-gradient(135deg, rgba(103,232,249,.15), rgba(167,139,250,.11));
+      border-bottom:1px solid rgba(255,255,255,.11);
+    }
+    .domain-kicker { color:#9eeaff; font-weight:850; letter-spacing:.1em; font-size:12px; text-transform:uppercase; }
+    .domain-title { margin:5px 0 0; font-size:clamp(24px, 2.2vw, 34px); line-height:1.05; letter-spacing:-.035em; }
+    .score-chip {
+      min-width:90px; text-align:center; padding:10px 12px; border-radius:16px; background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.12);
+    }
+    .score-chip strong { display:block; font-size:21px; }
+    .score-chip span { color:var(--muted); font-size:11px; }
+    .detail-body { padding:18px 22px 22px; max-height:640px; overflow:auto; -webkit-overflow-scrolling:touch; }
+    .section-title { margin:20px 0 8px; color:#dceeff; font-size:13px; text-transform:uppercase; letter-spacing:.11em; }
+    .copy { color:#d3e1f3; line-height:1.55; margin:0 0 10px; }
+    .impact {
+      border-left:3px solid var(--accent); padding:12px 14px; border-radius:12px; background:rgba(103,232,249,.07); color:#eafcff; line-height:1.45;
+    }
+    .chips { display:flex; flex-wrap:wrap; gap:8px; }
+    .chip {
+      display:inline-flex; align-items:center; gap:6px; padding:7px 9px; border-radius:999px;
+      background:rgba(255,255,255,.065); border:1px solid rgba(255,255,255,.12); color:#e7f4ff; font-size:12px;
+    }
+    .chip b { color:#93fbff; }
+    .measure-list { display:grid; gap:8px; margin-top:10px; }
+    .measure {
+      display:grid; grid-template-columns:72px 1fr; gap:10px; padding:10px;
+      border:1px solid rgba(255,255,255,.1); background:rgba(0,0,0,.12); border-radius:14px;
+    }
+    .measure.hidden { display:none; }
+    .measure-id { color:#96f2ff; font-weight:800; }
+    .measure-name { font-weight:750; color:#f5f8ff; }
+    .measure-gov { color:#aebfd3; font-size:12px; margin-top:4px; line-height:1.4; }
+    .measure-refs { color:#dacfff; font-size:11px; margin-top:6px; }
+    .matrix-card { padding:18px 20px 20px; }
+    .matrix-title { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; }
+    .matrix-title h2 { margin:0; font-size:20px; letter-spacing:-.03em; }
+    .std-grid { display:grid; gap:9px; }
+    .std-row {
+      border:1px solid rgba(255,255,255,.1); background:rgba(0,0,0,.12); border-radius:14px; padding:10px;
+      display:grid; grid-template-columns:145px 1fr; gap:10px; align-items:start;
+    }
+    .std-name { font-weight:850; color:#f3f8ff; }
+    .domain-tags { display:flex; gap:6px; flex-wrap:wrap; }
+    .tiny-domain { border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.06); color:#d7ecff; padding:5px 7px; border-radius:999px; font-size:11px; cursor:pointer; }
+    .tiny-domain:hover { border-color:rgba(103,232,249,.75); color:#fff; }
+    footer { padding:0 clamp(18px, 4vw, 44px) 24px; color:#8fa5bd; font-size:12px; }
+    .source-note { border-top:1px solid rgba(255,255,255,.1); padding-top:12px; }
+    .no-3d .wheel-stage { transform:rotateZ(var(--rz)); }
+    .no-3d .segment-depth { transform:translate(10px,16px); }
+    @media (max-width:1100px) {
+      main { grid-template-columns:1fr; }
+      .visual-card { min-height:620px; }
+      .detail-body { max-height:none; overflow:visible; }
+    }
+    @media (max-width:640px) {
+      header { flex-direction:column; align-items:flex-start; }
+      .pill-row { justify-content:flex-start; }
+      main { padding-left:12px; padding-right:12px; }
+      .visual-card { padding:12px; min-height:560px; }
+      .scene { height:410px; }
+      .wheel-stage { width:min(110vw, 520px); }
+      .upright-card { width:142px; min-height:98px; border-radius:22px; }
+      .upright-card strong { font-size:32px; }
+      .std-row { grid-template-columns:1fr; }
+      .measure { grid-template-columns:1fr; }
+      button, .std-filter { padding:9px 10px; font-size:12px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition:none !important; animation:none !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"></div>
+      <div>
+        <h1>DQI 3D Dimension Wheel</h1>
+        <div class="subtitle">12 equally weighted dimensions · click any segment to explode and inspect standards mapping</div>
+      </div>
+    </div>
+    <div class="pill-row">
+      <a class="back-link" href="/">← Audit Analytics</a>
+      <span class="pill">112 measures</span>
+      <span class="pill">0–5 maturity model</span>
+      <span class="pill">Assessment + governance view</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="visual-card">
+      <div class="controls">
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button id="explodeBtn" type="button">Explode all</button>
+          <button id="resetBtn" type="button">Reset view</button>
+          <button id="tiltBtn" type="button" class="active">3D tilt</button>
+        </div>
+        <input id="searchBox" class="search" type="search" placeholder="Search dimensions or measures…" />
+      </div>
+      <div class="controls" id="filters" aria-label="Standards filters"></div>
+      <div class="scene" id="scene" aria-label="Interactive 3D DQI wheel">
+        <div class="wheel-stage" id="wheelStage">
+          <svg id="wheel" viewBox="-380 -390 760 780" role="img" aria-labelledby="wheelTitle">
+            <title id="wheelTitle">DQI twelve-dimension interactive wheel</title>
+            <defs id="defs"></defs>
+            <g id="wheelTilt"></g>
+          </svg>
+        </div>
+        <div class="upright-card"><div><strong>DQI</strong><span id="centerSub">12 dimensions</span></div></div>
+      </div>
+      <div class="hint">Drag sideways to rotate · scroll vertically as normal · click a wedge to explode it.</div>
+    </section>
+
+    <div class="right-stack">
+      <section class="detail-card" id="detail"></section>
+      <section class="matrix-card">
+        <div class="matrix-title"><h2>Standards coverage map</h2><span class="pill" id="coverageCount"></span></div>
+        <div class="std-grid" id="stdGrid"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <div class="source-note">Prototype built from the DQI Standard v1.0 content: 12 domains, 112 measures, domain purpose statements, regulatory context, and measure-level normative references. The mapping is indicative and should be validated against the controlled source standard before external publication.</div>
+  </footer>
+</div>
+
+<script>
+const DATA = {"domains": [{"id": "D1", "name": "Data Value & Alignment", "weighting": "8.33%", "measureCount": 8, "purpose": "Data has value only when it is intentionally aligned to the outcomes the organisation is trying to achieve. This domain governs whether data assets, data initiatives, and data quality investments are explicitly connected to business strategy, operational requirements, and AI use cases. Organisations with weak value and alignment governance invest in the wrong data, build the wrong capabilities, and deploy AI on foundations that do not match their actual needs. Strong performance in this domain means data quality effort is directed where it produces measurable return.", "regulatoryContext": "ISO 8000-8 Clause 4 (context of the organisation). ISO 42001 Clause 4.1 (understanding the organisation). No direct EU AI Act obligation, but Article 9 (risk management) and Article 10 (data governance) assume alignment of data to AI purpose.", "standards": ["ISO 8000", "DAMA DMBOK", "ISO/IEC 42001", "EU AI Act"], "measures": [{"id": "D1.1", "name": "Business Glossary", "governs": "Whether a maintained, accessible, and authoritative glossary of business terms exists and is linked to data assets, reports, and AI model inputs.", "refs": "ISO 8000-8 DAMA DMBOK Ch.2", "tags": ["ISO 8000", "DAMA DMBOK"]}, {"id": "D1.2", "name": "Use Case Linkage", "governs": "Whether critical reports, AI models, and data products are formally linked to documented business KPIs and strategic objectives.", "refs": "ISO 8000-8 Clause 4 ISO 42001 Clause 4.1", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D1.3", "name": "ROI Measurement", "governs": "Whether an agreed methodology exists for quantifying the return on investment from data quality and data governance initiatives.", "refs": "ISO 8000-8 DAMA DMBOK Ch.1", "tags": ["ISO 8000", "DAMA DMBOK"]}, {"id": "D1.4", "name": "Stakeholder Satisfaction", "governs": "Whether satisfaction with data products and data services is measured and whether findings are acted upon.", "refs": "ISO 8000-8 DAMA DMBOK Ch.1", "tags": ["ISO 8000", "DAMA DMBOK"]}, {"id": "D1.5", "name": "Requirements Traceability", "governs": "Whether business and regulatory requirements are traced end-to-end through to datasets, pipelines, and AI model inputs.", "refs": "ISO 8000-8 ISO 42001 Clause 8.4", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D1.6", "name": "Impact Assessment", "governs": "Whether the business impact of data quality issues is formally assessed before release of data products, reports, or AI models.", "refs": "ISO 8000-61 ISO 42001 Clause 8.4 EU AI Act Article 9", "tags": ["ISO 8000", "ISO/IEC 42001", "EU AI Act"]}, {"id": "D1.7", "name": "Data Product Ownership", "governs": "Whether data products are formally owned, versioned, and managed as business assets with defined lifecycles.", "refs": "ISO 8000-8 DAMA DMBOK Ch.3", "tags": ["ISO 8000", "DAMA DMBOK"]}, {"id": "D1.8", "name": "Strategic Alignment", "governs": "Whether the data strategy is formally aligned to the organisation's business strategy and AI strategy, with alignment reviewed on a defined cycle.", "refs": "ISO 8000-8 Clause 4 ISO 42001 Clause 4.1", "tags": ["ISO 8000", "ISO/IEC 42001"]}], "measureNames": ["Business Glossary", "Use Case Linkage", "ROI Measurement", "Stakeholder Satisfaction", "Requirements Traceability", "Impact Assessment", "Data Product Ownership", "Strategic Alignment"], "impact": "Connects data and AI investment to business outcomes, avoiding high-cost data initiatives that do not serve operational priorities."}, {"id": "D2", "name": "Data Ownership & Stewardship", "weighting": "8.33%", "measureCount": 8, "purpose": "Data governance without accountability is aspiration without effect. This domain governs whether clear, enforceable accountability for data assets is assigned to named individuals, whether those individuals have the authority and tools to act, and whether the organisation has the structural mechanisms to resolve data quality issues and make governance decisions. Weak ownership is the single most common root cause of data quality failures across all sectors.", "regulatoryContext": "ISO 8000-8 Clause 5 (leadership and accountability). ISO 42001 Clause 5 (leadership). GDPR Article 5(2) (accountability principle) requires demonstrable accountability for data processing.", "standards": ["ISO 8000", "GDPR / UK GDPR", "DAMA DMBOK", "ISO/IEC 42001"], "measures": [{"id": "D2.1", "name": "Formalised Roles", "governs": "Whether Data Owners and Data Stewards are formally assigned, trained, and held accountable for defined data assets.", "refs": "ISO 8000-8 Clause 5 DAMA DMBOK Ch.3 GDPR Art.5(2)", "tags": ["ISO 8000", "GDPR / UK GDPR", "DAMA DMBOK"]}, {"id": "D2.2", "name": "Accountability Mapping", "governs": "Whether accountability for data quality and governance is mapped via a formal RACI or equivalent across the full data lifecycle.", "refs": "ISO 8000-8 Clause 5 DAMA DMBOK Ch.3", "tags": ["ISO 8000", "DAMA DMBOK"]}, {"id": "D2.3", "name": "Stewardship Workflow", "governs": "Whether a defined workflow exists for data issue triage, assignment, resolution, and closure.", "refs": "ISO 8000-61 DAMA DMBOK Ch.3", "tags": ["ISO 8000", "DAMA DMBOK"]}, {"id": "D2.4", "name": "Performance Metrics", "governs": "Whether Data Owners and Stewards have defined KPIs and whether performance against those KPIs is measured and reviewed.", "refs": "ISO 8000-8 Clause 9 ISO 42001 Clause 9", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D2.5", "name": "Executive Sponsorship", "governs": "Whether active, named executive sponsorship for data quality and governance exists and is visible.", "refs": "ISO 8000-8 Clause 5 ISO 42001 Clause 5.1", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D2.6", "name": "Cross-Functional Council", "governs": "Whether a cross-functional data governance council or equivalent forum meets regularly with recorded outcomes and followed-up actions.", "refs": "ISO 8000-8 Clause 5 DAMA DMBOK Ch.3", "tags": ["ISO 8000", "DAMA DMBOK"]}, {"id": "D2.7", "name": "Escalation & Decision Rights", "governs": "Whether escalation paths and data governance decision rights are clearly defined, documented, and understood by the organisation.", "refs": "ISO 8000-8 Clause 5 DAMA DMBOK Ch.3", "tags": ["ISO 8000", "DAMA DMBOK"]}, {"id": "D2.8", "name": "Stewardship Coverage", "governs": "The percentage of critical data assets that have a named, active, and trained Data Owner or Steward.", "refs": "ISO 8000-8 Clause 5 DAMA DMBOK Ch.3 GDPR Art.5(2)", "tags": ["ISO 8000", "GDPR / UK GDPR", "DAMA DMBOK"]}], "measureNames": ["Formalised Roles", "Accountability Mapping", "Stewardship Workflow", "Performance Metrics", "Executive Sponsorship", "Cross-Functional Council", "Escalation & Decision Rights", "Stewardship Coverage"], "impact": "Creates named accountability so issues are resolved by empowered owners rather than left to informal escalation."}, {"id": "D3", "name": "Core Data Quality", "weighting": "8.33%", "measureCount": 12, "purpose": "This domain governs the intrinsic quality characteristics of data itself: whether data is accurate, complete, consistent, timely, valid, unique, and fit for its intended purpose. These dimensions are the spine of ISO 8000 and the foundational requirement for reliable analytics and trustworthy AI. An organisation may have excellent governance structures but if the data itself is inaccurate or incomplete, those structures produce well-managed poor outcomes. Core data quality must be measured, monitored, and actively managed.", "regulatoryContext": "ISO 8000-8 (data quality principles). ISO 8000-61 (data quality management). ISO 42001 Clause 8 (operation). EU AI Act Article 10 (data and data governance) requires training, validation, and testing datasets to meet quality standards. GDPR Article 5(1)(d) (accuracy principle).", "standards": ["ISO 8000", "EU AI Act", "GDPR / UK GDPR", "DAMA DMBOK", "ISO/IEC 42001"], "measures": [{"id": "D3.1", "name": "Accuracy", "governs": "Whether data values correctly represent the real-world entities or events they describe, measured against trusted reference sources with automated checks.", "refs": "ISO 8000-8 ISO 8000-61 GDPR Art.5(1)(d) EU AI Act Art.10", "tags": ["ISO 8000", "EU AI Act", "GDPR / UK GDPR"]}, {"id": "D3.2", "name": "Completeness", "governs": "Whether data contains all required values and whether completeness thresholds are defined and enforced for critical datasets.", "refs": "ISO 8000-8 ISO 8000-61 EU AI Act Art.10", "tags": ["ISO 8000", "EU AI Act"]}, {"id": "D3.3", "name": "Consistency", "governs": "Whether data definitions and values are applied consistently across all systems, domains, and use cases.", "refs": "ISO 8000-8 ISO 8000-61 DAMA DMBOK Ch.2", "tags": ["ISO 8000", "DAMA DMBOK"]}, {"id": "D3.4", "name": "Timeliness", "governs": "Whether SLAs for data freshness are defined, monitored, and met for all critical data assets and AI model inputs.", "refs": "ISO 8000-8 ISO 42001 Clause 8 EU AI Act Art.10", "tags": ["ISO 8000", "ISO/IEC 42001", "EU AI Act"]}, {"id": "D3.5", "name": "Validity", "governs": "Whether data values are validated against business rules at ingestion and in-flight across pipelines.", "refs": "ISO 8000-61 EU AI Act Art.10", "tags": ["ISO 8000", "EU AI Act"]}, {"id": "D3.6", "name": "Uniqueness", "governs": "Whether duplicate detection and deduplication processes are in place for critical data assets, particularly master data.", "refs": "ISO 8000-8 ISO 8000-61 GDPR Art.5(1)(c)", "tags": ["ISO 8000", "GDPR / UK GDPR"]}, {"id": "D3.7", "name": "Integrity", "governs": "Whether referential integrity constraints are enforced across datasets and between systems.", "refs": "ISO 8000-8 ISO 8000-61", "tags": ["ISO 8000"]}, {"id": "D3.8", "name": "Provenance", "governs": "Whether the origin, transformation history, and lineage of data are recorded and traceable.", "refs": "ISO 8000-110 ISO 42001 Clause 8 EU AI Act Art.10,12", "tags": ["ISO 8000", "ISO/IEC 42001", "EU AI Act"]}, {"id": "D3.9", "name": "Precision", "governs": "Whether data is captured and stored at the precision required for its intended use cases, including AI model inputs.", "refs": "ISO 8000-8 EU AI Act Art.10", "tags": ["ISO 8000", "EU AI Act"]}, {"id": "D3.10", "name": "Credibility", "governs": "Whether data sources are assessed and rated for trustworthiness, and whether those ratings are applied when selecting data for AI training and analytics.", "refs": "ISO 8000-8 ISO 42001 Clause 8.4", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D3.11", "name": "Auditability", "governs": "Whether every change to a critical data asset can be traced, attributed, and reconstructed.", "refs": "ISO 8000-110 ISO 42001 Clause 8 EU AI Act Art.12 GDPR Art.5(2)", "tags": ["ISO 8000", "ISO/IEC 42001", "EU AI Act", "GDPR / UK GDPR"]}, {"id": "D3.12", "name": "Fitness for Purpose", "governs": "Whether data quality is formally assessed against the specific requirements of each intended use case, including AI model development and deployment.", "refs": "ISO 8000-8 ISO 8000-61 ISO 42001 Clause 8.4 EU AI Act Art.10", "tags": ["ISO 8000", "ISO/IEC 42001", "EU AI Act"]}], "measureNames": ["Accuracy", "Completeness", "Consistency", "Timeliness", "Validity", "Uniqueness", "Integrity", "Provenance", "Precision", "Credibility", "Auditability", "Fitness for Purpose"], "impact": "Establishes whether the data itself is accurate, complete, consistent, timely, valid, unique, and fit for purpose."}, {"id": "D4", "name": "Pipeline Quality & Operations", "weighting": "8.33%", "measureCount": 10, "purpose": "Data quality deteriorates in transit. Pipelines that ingest, transform, and deliver data introduce errors through incomplete validation, undocumented transformations, undetected failures, and ungoverned change. This domain governs the operational quality of data pipelines from ingestion through to delivery, including the pipelines that feed AI systems. Organisations with mature pipeline governance can trace exactly what happened to data between source and consumption, detect failures before they affect downstream decisions, and ensure AI model inputs are consistently of known quality.", "regulatoryContext": "ISO 8000-61 (data quality management operations). ISO 42001 Clause 8 (operation). EU AI Act Article 10 requires that data used for training, validation, and testing undergoes appropriate data preparation processing.", "standards": ["ISO 8000", "EU AI Act", "ISO/IEC 42001"], "measures": [{"id": "D4.1", "name": "Ingestion Controls", "governs": "Whether ingestion processes are governed with quality gates that validate data before it enters pipelines.", "refs": "ISO 8000-61 EU AI Act Art.10", "tags": ["ISO 8000", "EU AI Act"]}, {"id": "D4.2", "name": "Transformation Integrity", "governs": "Whether all data transformations are documented, tested, and validated to ensure they do not introduce errors or unintended changes.", "refs": "ISO 8000-61 ISO 42001 Clause 8 EU AI Act Art.10", "tags": ["ISO 8000", "ISO/IEC 42001", "EU AI Act"]}, {"id": "D4.3", "name": "Monitoring & Alerting", "governs": "Whether pipeline health is monitored in real time with automated alerts for failures, anomalies, and SLA breaches.", "refs": "ISO 8000-61 ISO 42001 Clause 9", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D4.4", "name": "Error Handling", "governs": "Whether a robust error handling framework is in place covering logging, incident classification, and workflow for resolution.", "refs": "ISO 8000-61", "tags": ["ISO 8000"]}, {"id": "D4.5", "name": "Volume & Velocity", "governs": "Whether pipelines are designed and tested to handle peak data volumes and velocity without quality degradation.", "refs": "ISO 8000-61 ISO 42001 Clause 8", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D4.6", "name": "Dependency Management", "governs": "Whether upstream and downstream pipeline dependencies are mapped, managed, and considered in change and incident management.", "refs": "ISO 8000-61", "tags": ["ISO 8000"]}, {"id": "D4.7", "name": "Testing & Validation", "governs": "Whether pipelines are subject to formal unit, integration, and regression testing before deployment and after change.", "refs": "ISO 8000-61 ISO 42001 Clause 8.4", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D4.8", "name": "Incident Response", "governs": "Whether a defined, tested incident response process exists for pipeline failures, covering detection, communication, resolution, and post-incident review.", "refs": "ISO 8000-61", "tags": ["ISO 8000"]}, {"id": "D4.9", "name": "Change Management", "governs": "Whether pipeline changes are subject to formal review, approval, and impact assessment before deployment.", "refs": "ISO 8000-61 ISO 42001 Clause 8.4", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D4.10", "name": "Observability", "governs": "Whether full observability is in place across pipeline stages, enabling end-to-end visibility of data flow, quality, and health.", "refs": "ISO 8000-61 ISO 42001 Clause 9", "tags": ["ISO 8000", "ISO/IEC 42001"]}], "measureNames": ["Ingestion Controls", "Transformation Integrity", "Monitoring & Alerting", "Error Handling", "Volume & Velocity", "Dependency Management", "Testing & Validation", "Incident Response", "Change Management", "Observability"], "impact": "Controls the operational path from ingestion to consumption so quality does not decay in pipelines or AI inputs."}, {"id": "D5", "name": "AI Readiness & Provenance", "weighting": "8.33%", "measureCount": 12, "purpose": "AI systems are only as trustworthy as the data that shapes them. This domain governs the data governance controls specific to AI development and deployment: the provenance of training data, the quality of that data before use, the detection of bias and drift, the governance of features, and the controls on inputs at inference time. This is the domain most directly relevant to EU AI Act compliance and the domain where the consequences of poor governance are most severe. An AI model trained on unvalidated, undocumented, or biased data is not a governed asset — it is an ungoverned risk.", "regulatoryContext": "EU AI Act Articles 9, 10, 12, 13, 17 (risk management, data governance, logging, transparency, accuracy). ISO 42001 Clause 8 (operation, AI system development). GDPR Articles 5, 13, 22 (data quality, transparency, automated decision-making). NIST AI RMF Govern, Map, Measure, Manage functions.", "standards": ["ISO/IEC 42001", "EU AI Act", "NIST AI RMF", "GDPR / UK GDPR"], "measures": [{"id": "D5.1", "name": "Training Data Provenance", "governs": "Whether the origin, lineage, version, and transformation history of all training data is documented and maintained for every AI system in production.", "refs": "EU AI Act Art.10 ISO 42001 Clause 8.4 NIST AI RMF", "tags": ["ISO/IEC 42001", "EU AI Act", "NIST AI RMF"]}, {"id": "D5.2", "name": "Training Data Quality", "governs": "Whether training data is formally assessed against defined quality thresholds before model development begins.", "refs": "EU AI Act Art.10 ISO 42001 Clause 8.4", "tags": ["ISO/IEC 42001", "EU AI Act"]}, {"id": "D5.3", "name": "Bias & Representativeness", "governs": "Whether training datasets are formally assessed for bias and demographic or structural representativeness before use.", "refs": "EU AI Act Art.10 ISO 42001 Clause 8.4 NIST AI RMF", "tags": ["ISO/IEC 42001", "EU AI Act", "NIST AI RMF"]}, {"id": "D5.4", "name": "Labelling Quality", "governs": "Where labelled data is used, whether labelling accuracy, inter-annotator agreement, and labelling process governance are documented.", "refs": "EU AI Act Art.10 ISO 42001 Clause 8.4", "tags": ["ISO/IEC 42001", "EU AI Act"]}, {"id": "D5.5", "name": "Feature Engineering Governance", "governs": "Whether feature definitions, transformations, and selections are documented, versioned, and governed.", "refs": "ISO 42001 Clause 8.4 EU AI Act Art.10,12", "tags": ["ISO/IEC 42001", "EU AI Act"]}, {"id": "D5.6", "name": "Input Validation", "governs": "Whether AI model inputs are validated against defined schemas and quality thresholds at inference time.", "refs": "EU AI Act Art.9,10 ISO 42001 Clause 8.5", "tags": ["ISO/IEC 42001", "EU AI Act"]}, {"id": "D5.7", "name": "Data Drift Detection", "governs": "Whether mechanisms are in place to detect and alert on statistical drift in the data distributions used by AI models.", "refs": "EU AI Act Art.9,12 ISO 42001 Clause 9 NIST AI RMF", "tags": ["ISO/IEC 42001", "EU AI Act", "NIST AI RMF"]}, {"id": "D5.8", "name": "Model-Data Traceability", "governs": "Whether the data used to train each version of each model can be fully identified, documented, and reconstructed for audit purposes.", "refs": "EU AI Act Art.10,12 ISO 42001 Clause 8.4", "tags": ["ISO/IEC 42001", "EU AI Act"]}, {"id": "D5.9", "name": "AI Data Retention", "governs": "Whether datasets used for AI training are retained, versioned, and accessible for audit for appropriate periods.", "refs": "EU AI Act Art.12 ISO 42001 Clause 7.5 GDPR Art.5(1)(e)", "tags": ["ISO/IEC 42001", "EU AI Act", "GDPR / UK GDPR"]}, {"id": "D5.10", "name": "Consent & Personal Data Provenance", "governs": "Whether personal data used in AI systems is governed with documented consent, purpose limitation, and provenance records.", "refs": "GDPR Art.5,6,13,22 EU AI Act Art.10 ISO 42001 Clause 8", "tags": ["ISO/IEC 42001", "EU AI Act", "GDPR / UK GDPR"]}, {"id": "D5.11", "name": "Synthetic & Augmented Data Controls", "governs": "Where synthetic or augmented data is used in AI development, whether its generation, scope, and limitations are governed.", "refs": "EU AI Act Art.10 ISO 42001 Clause 8.4", "tags": ["ISO/IEC 42001", "EU AI Act"]}, {"id": "D5.12", "name": "AI Readiness Gate", "governs": "Whether a formal process exists to certify that data is ready before AI initiatives are permitted to begin development or deployment.", "refs": "EU AI Act Art.9,10 ISO 42001 Clause 8.4 NIST AI RMF", "tags": ["ISO/IEC 42001", "EU AI Act", "NIST AI RMF"]}], "measureNames": ["Training Data Provenance", "Training Data Quality", "Bias & Representativeness", "Labelling Quality", "Feature Engineering Governance", "Input Validation", "Data Drift Detection", "Model-Data Traceability", "AI Data Retention", "Consent & Personal Data Provenance", "Synthetic & Augmented Data Controls", "AI Readiness Gate"], "impact": "Governs AI-specific data provenance, training data quality, bias, drift, features, inference inputs, and model-data traceability."}, {"id": "D6", "name": "Governance & Compliance", "weighting": "8.33%", "measureCount": 10, "purpose": "This domain governs the structural governance layer: the policies, processes, metadata management, lineage transparency, and regulatory compliance controls that make data quality governance enforceable rather than aspirational. It is the bridge between ownership (Domain 2) and operational quality (Domains 3 and 4), providing the formal framework within which quality is defined, enforced, and audited. Organisations with strong governance and compliance maturity can demonstrate to regulators, auditors, and customers that their data and AI practices are controlled.", "regulatoryContext": "ISO 8000-8 Clause 4-10 (full standard). ISO 42001 Clauses 4-10. EU AI Act Articles 9, 11, 12, 17 (risk management, technical documentation, logging, quality management). GDPR Articles 5, 24, 25, 30 (principles, accountability, privacy by design, records of processing).", "standards": ["ISO 8000", "ISO/IEC 42001", "GDPR / UK GDPR", "DAMA DMBOK", "EU AI Act"], "measures": [{"id": "D6.1", "name": "Policy Framework", "governs": "Whether a documented, published, and enforced data governance policy framework exists.", "refs": "ISO 8000-8 Clause 5 ISO 42001 Clause 5 GDPR Art.24", "tags": ["ISO 8000", "ISO/IEC 42001", "GDPR / UK GDPR"]}, {"id": "D6.2", "name": "Metadata Management", "governs": "Whether business and technical metadata is captured, maintained, and made discoverable for all critical data assets.", "refs": "ISO 8000-8 DAMA DMBOK Ch.12", "tags": ["ISO 8000", "DAMA DMBOK"]}, {"id": "D6.3", "name": "Lineage Transparency", "governs": "Whether data lineage can be traced from source to report or AI model for all critical data assets.", "refs": "ISO 8000-110 EU AI Act Art.12 ISO 42001 Clause 8", "tags": ["ISO 8000", "ISO/IEC 42001", "EU AI Act"]}, {"id": "D6.4", "name": "Regulatory Compliance", "governs": "Whether regulatory data requirements are embedded in processes and regularly audited for compliance.", "refs": "GDPR Art.5,24,30 EU AI Act Art.9,17 ISO 42001 Clause 9", "tags": ["ISO/IEC 42001", "EU AI Act", "GDPR / UK GDPR"]}, {"id": "D6.5", "name": "EU AI Act Alignment", "governs": "Whether AI systems have been assessed against EU AI Act obligations including risk classification, and whether required controls are in place.", "refs": "EU AI Act Art.6,9,10,11,12,13,17,52", "tags": ["EU AI Act"]}, {"id": "D6.6", "name": "ISO 42001 Alignment", "governs": "Whether an AI Management System aligned to ISO/IEC 42001 is in place or formally in development.", "refs": "ISO 42001 Clauses 4-10", "tags": ["ISO/IEC 42001"]}, {"id": "D6.7", "name": "Quality Issue Management", "governs": "Whether a centralised register for data quality issues exists with root cause analysis and remediation tracking.", "refs": "ISO 8000-61 ISO 42001 Clause 10", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D6.8", "name": "Policy Enforcement", "governs": "Whether governance policies are enforced through automated controls rather than relying solely on manual compliance.", "refs": "ISO 8000-8 ISO 42001 Clause 8 GDPR Art.25", "tags": ["ISO 8000", "ISO/IEC 42001", "GDPR / UK GDPR"]}, {"id": "D6.9", "name": "Third-Party Data Governance", "governs": "Whether governance standards are applied to data received from third parties including suppliers, partners, and public data sources.", "refs": "ISO 8000-8 GDPR Art.28 EU AI Act Art.10", "tags": ["ISO 8000", "EU AI Act", "GDPR / UK GDPR"]}, {"id": "D6.10", "name": "Governance Audit Trail", "governs": "Whether an auditable record of governance decisions, policy exceptions, and compliance actions is maintained.", "refs": "ISO 8000-8 ISO 42001 Clause 7.5 EU AI Act Art.12 GDPR Art.5(2)", "tags": ["ISO 8000", "ISO/IEC 42001", "EU AI Act", "GDPR / UK GDPR"]}], "measureNames": ["Policy Framework", "Metadata Management", "Lineage Transparency", "Regulatory Compliance", "EU AI Act Alignment", "ISO 42001 Alignment", "Quality Issue Management", "Policy Enforcement", "Third-Party Data Governance", "Governance Audit Trail"], "impact": "Turns governance into enforceable policy, audit evidence, lineage, metadata, and compliance control."}, {"id": "D7", "name": "Security & Privacy", "weighting": "8.33%", "measureCount": 10, "purpose": "Data governance and security are complementary disciplines. Ungoverned data is often insecure data: without classification, access controls become arbitrary; without lineage, breaches cannot be scoped; without retention policies, data accumulates beyond its protective justification. This domain governs the security and privacy controls applied to data assets, with specific attention to the AI-specific security considerations that most organisations have not yet addressed. Strong performance in this domain means the organisation can demonstrate that personal and sensitive data is protected, that access is controlled and audited, and that AI systems are not exposed to adversarial threats.", "regulatoryContext": "GDPR Articles 5, 25, 32, 33, 34 (security, privacy by design, breach notification). UK GDPR equivalents. EU AI Act Article 15 (accuracy, robustness, cybersecurity for high-risk AI). ISO 27001 (information security management).", "standards": ["EU AI Act", "GDPR / UK GDPR", "ISO 27001", "ISO/IEC 42001", "NIST AI RMF"], "measures": [{"id": "D7.1", "name": "Data Encryption", "governs": "Whether all critical data assets are encrypted at rest and in transit using current cryptographic standards.", "refs": "GDPR Art.32 EU AI Act Art.15 ISO 27001", "tags": ["EU AI Act", "GDPR / UK GDPR", "ISO 27001"]}, {"id": "D7.2", "name": "Access Controls", "governs": "Whether role-based, least-privilege access controls are enforced and regularly reviewed for all critical data assets.", "refs": "GDPR Art.25,32 EU AI Act Art.15 ISO 27001", "tags": ["EU AI Act", "GDPR / UK GDPR", "ISO 27001"]}, {"id": "D7.3", "name": "Audit Logging", "governs": "Whether access and change logging is comprehensive, tamper-evident, and actively reviewed.", "refs": "GDPR Art.32 EU AI Act Art.12 ISO 27001", "tags": ["EU AI Act", "GDPR / UK GDPR", "ISO 27001"]}, {"id": "D7.4", "name": "Regulatory Adherence", "governs": "Whether the organisation demonstrably meets applicable data protection regulatory requirements including GDPR and sector-specific obligations.", "refs": "GDPR Art.5,24 EU AI Act Art.15,17", "tags": ["EU AI Act", "GDPR / UK GDPR"]}, {"id": "D7.5", "name": "Breach Response", "governs": "Whether a documented, tested incident response plan for data breaches is in place.", "refs": "GDPR Art.33,34 ISO 27001", "tags": ["GDPR / UK GDPR", "ISO 27001"]}, {"id": "D7.6", "name": "Security Training", "governs": "Whether all staff handling data receive regular security and data protection training.", "refs": "GDPR Art.32 ISO 27001", "tags": ["GDPR / UK GDPR", "ISO 27001"]}, {"id": "D7.7", "name": "Data Classification", "governs": "Whether data assets are classified by sensitivity with proportionate security controls applied to each classification tier.", "refs": "GDPR Art.25,32 ISO 27001", "tags": ["GDPR / UK GDPR", "ISO 27001"]}, {"id": "D7.8", "name": "Privacy by Design", "governs": "Whether privacy impact assessments are conducted for new data and AI initiatives and whether privacy controls are embedded at design stage.", "refs": "GDPR Art.25,35 EU AI Act Art.9 ISO 42001 Clause 8", "tags": ["ISO/IEC 42001", "EU AI Act", "GDPR / UK GDPR"]}, {"id": "D7.9", "name": "AI-Specific Security", "governs": "Whether AI model inputs and outputs are protected against adversarial attacks, prompt injection, data poisoning, and model inversion.", "refs": "EU AI Act Art.15 ISO 42001 Clause 8.5 NIST AI RMF", "tags": ["ISO/IEC 42001", "EU AI Act", "NIST AI RMF"]}, {"id": "D7.10", "name": "Third-Party Security", "governs": "Whether data security standards are contractually required for third-party data processors and AI vendors.", "refs": "GDPR Art.28 EU AI Act Art.25,28 ISO 27001", "tags": ["EU AI Act", "GDPR / UK GDPR", "ISO 27001"]}], "measureNames": ["Data Encryption", "Access Controls", "Audit Logging", "Regulatory Adherence", "Breach Response", "Security Training", "Data Classification", "Privacy by Design", "AI-Specific Security", "Third-Party Security"], "impact": "Protects personal, sensitive, and AI-relevant data through privacy, security, access, logging, and adversarial-risk controls."}, {"id": "D8", "name": "Tooling & Technology", "weighting": "8.33%", "measureCount": 8, "purpose": "Data governance is only as effective as the tools that support it. Manual processes degrade, inconsistency grows, and coverage fails without automation. This domain governs whether the organisation's technology choices for data management, quality monitoring, cataloguing, and AI operations are fit for purpose, well-integrated, and sufficiently automated to make governance scalable. It also addresses the critical question of AI toolchain readiness: the feature stores, model registries, and pipeline management tools that make AI governance operational rather than theoretical.", "regulatoryContext": "ISO 8000-61 (operational data quality management). ISO 42001 Clause 8 (AI system lifecycle tools). No direct EU AI Act tooling obligation but Article 9 (risk management systems) and Article 17 (quality management) assume tooling capability.", "standards": ["ISO 8000", "ISO/IEC 42001", "DAMA DMBOK", "EU AI Act"], "measures": [{"id": "D8.1", "name": "Tool Integration", "governs": "How well data catalog, quality monitoring, pipeline orchestration, and observability tools are integrated with each other.", "refs": "ISO 8000-61 ISO 42001 Clause 8", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D8.2", "name": "Automation Level", "governs": "The extent to which data quality checks, remediation workflows, and governance processes are automated rather than manual.", "refs": "ISO 8000-61 ISO 42001 Clause 8", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D8.3", "name": "Platform Fit", "governs": "How well the current tooling aligns to the organisation's data platform strategy and AI strategy.", "refs": "ISO 42001 Clause 8", "tags": ["ISO/IEC 42001"]}, {"id": "D8.4", "name": "User Accessibility", "governs": "Whether tools are accessible and usable for both technical and business user personas without requiring specialist IT support.", "refs": "DAMA DMBOK Ch.12 ISO 42001 Clause 7.2", "tags": ["ISO/IEC 42001", "DAMA DMBOK"]}, {"id": "D8.5", "name": "API Extensibility", "governs": "Whether tools expose APIs and SDKs that enable integration, customisation, and extension.", "refs": "ISO 42001 Clause 8", "tags": ["ISO/IEC 42001"]}, {"id": "D8.6", "name": "Cloud-Native Alignment", "governs": "Whether tooling is cloud-native or well-architected for the chosen cloud environment, enabling scalability and operational efficiency.", "refs": "ISO 42001 Clause 8", "tags": ["ISO/IEC 42001"]}, {"id": "D8.7", "name": "AI Toolchain Readiness", "governs": "Whether the toolchain includes AI/ML pipeline management, feature stores, model registries, and experiment tracking.", "refs": "ISO 42001 Clause 8 EU AI Act Art.9,12", "tags": ["ISO/IEC 42001", "EU AI Act"]}, {"id": "D8.8", "name": "Tooling Debt", "governs": "Whether there is a managed process to identify, prioritise, and retire legacy or redundant tooling.", "refs": "ISO 8000-61", "tags": ["ISO 8000"]}], "measureNames": ["Tool Integration", "Automation Level", "Platform Fit", "User Accessibility", "API Extensibility", "Cloud-Native Alignment", "AI Toolchain Readiness", "Tooling Debt"], "impact": "Assesses whether tools, catalogues, quality monitoring, orchestration, observability, and AI platforms make governance scalable."}, {"id": "D9", "name": "Transparency & Access", "weighting": "8.33%", "measureCount": 8, "purpose": "Governance that is invisible to its consumers is governance that fails. Data consumers need to find data, understand its quality, know when it changes, and trust that the AI outputs they rely on are based on reliable foundations. This domain governs data discoverability, quality transparency, access governance, and the transparency requirements specific to AI systems. Strong performance means data consumers across the organisation can make better decisions because they understand the provenance and quality of the data behind those decisions.", "regulatoryContext": "EU AI Act Articles 13, 52 (transparency and provision of information to users). GDPR Article 5(1)(a) (lawfulness, fairness, transparency). ISO 42001 Clause 8 (AI system transparency requirements).", "standards": ["ISO 8000", "DAMA DMBOK", "ISO/IEC 42001", "EU AI Act", "GDPR / UK GDPR"], "measures": [{"id": "D9.1", "name": "Data Discoverability", "governs": "Whether users can find datasets with full context including quality, lineage, and ownership without requiring IT assistance.", "refs": "ISO 8000-8 DAMA DMBOK Ch.12", "tags": ["ISO 8000", "DAMA DMBOK"]}, {"id": "D9.2", "name": "Quality Visibility", "governs": "Whether data quality metrics are visible to data consumers at the point of use in dashboards, reports, and data products.", "refs": "ISO 8000-8 ISO 42001 Clause 8", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D9.3", "name": "Access Controls", "governs": "Whether access controls are risk-based, streamlined for legitimate users, and fully auditable.", "refs": "GDPR Art.25,32 EU AI Act Art.15", "tags": ["EU AI Act", "GDPR / UK GDPR"]}, {"id": "D9.4", "name": "Self-Service Capability", "governs": "Whether analysts and business users can self-serve with governed data including lineage, quality information, and approved templates.", "refs": "DAMA DMBOK Ch.12 ISO 42001 Clause 7.2", "tags": ["ISO/IEC 42001", "DAMA DMBOK"]}, {"id": "D9.5", "name": "Change Communication", "governs": "Whether upstream data changes are communicated proactively to downstream consumers with sufficient notice and impact assessment.", "refs": "ISO 8000-61 DAMA DMBOK Ch.3", "tags": ["ISO 8000", "DAMA DMBOK"]}, {"id": "D9.6", "name": "Trust Metrics", "governs": "Whether the organisation measures data product trust through adoption rates, consumer satisfaction, and mean time to resolve quality incidents.", "refs": "ISO 8000-8 DAMA DMBOK Ch.1", "tags": ["ISO 8000", "DAMA DMBOK"]}, {"id": "D9.7", "name": "AI Output Transparency", "governs": "Whether AI model outputs are accompanied by sufficient context for consumers to assess their reliability and limitations.", "refs": "EU AI Act Art.13,52 ISO 42001 Clause 8.5", "tags": ["ISO/IEC 42001", "EU AI Act"]}, {"id": "D9.8", "name": "Data Contract Adoption", "governs": "Whether formal data contracts are in place between data producers and consumers, defining quality SLAs, freshness requirements, and change notification obligations.", "refs": "ISO 8000-61 DAMA DMBOK Ch.3", "tags": ["ISO 8000", "DAMA DMBOK"]}], "measureNames": ["Data Discoverability", "Quality Visibility", "Access Controls", "Self-Service Capability", "Change Communication", "Trust Metrics", "AI Output Transparency", "Data Contract Adoption"], "impact": "Makes quality, access, provenance, ownership, and AI output transparency visible to data consumers and decision-makers."}, {"id": "D10", "name": "Lifecycle & Retention", "weighting": "8.33%", "measureCount": 8, "purpose": "Data that is retained beyond its purpose is a liability. Data that is deleted before it is needed is a loss. Governance of the full data lifecycle — from creation through active use to archival, deletion, and decommissioning — is fundamental to GDPR compliance, AI audit readiness, and operational efficiency. This domain is particularly critical for AI systems: the datasets used to train models must be retained for audit purposes, but personal data used in training must also be managed within consent and purpose limitation frameworks. These obligations create tension that only deliberate lifecycle governance can resolve.", "regulatoryContext": "GDPR Articles 5(1)(e), 17 (storage limitation, right to erasure). EU AI Act Article 12 (logging and record-keeping). ISO 42001 Clause 7.5 (documented information). Multiple jurisdiction-specific data retention regulations.", "standards": ["ISO/IEC 42001", "EU AI Act", "GDPR / UK GDPR", "ISO 8000"], "measures": [{"id": "D10.1", "name": "Retention Policy", "governs": "Whether data retention policies are defined for all critical data classes and whether those policies are enforced.", "refs": "GDPR Art.5(1)(e) EU AI Act Art.12 ISO 42001 Clause 7.5", "tags": ["ISO/IEC 42001", "EU AI Act", "GDPR / UK GDPR"]}, {"id": "D10.2", "name": "Archival Process", "governs": "Whether a governed archival process exists with defined criteria for when and how data is moved from active to archived state.", "refs": "GDPR Art.5(1)(e) ISO 42001 Clause 7.5", "tags": ["ISO/IEC 42001", "GDPR / UK GDPR"]}, {"id": "D10.3", "name": "Deletion & Right to Erasure", "governs": "Whether processes are in place to fulfil data subject deletion requests within regulatory timescales, including deletion from AI training data and models.", "refs": "GDPR Art.17 EU AI Act Art.10", "tags": ["EU AI Act", "GDPR / UK GDPR"]}, {"id": "D10.4", "name": "End-of-Life Governance", "governs": "Whether a formal process exists for decommissioning data assets at the end of their useful life.", "refs": "ISO 8000-8 ISO 42001 Clause 7.5", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D10.5", "name": "AI Training Data Retention", "governs": "Whether datasets used for AI training are retained and accessible for audit for periods aligned to model lifecycle and regulatory obligations.", "refs": "EU AI Act Art.12 ISO 42001 Clause 7.5 GDPR Art.5(1)(e)", "tags": ["ISO/IEC 42001", "EU AI Act", "GDPR / UK GDPR"]}, {"id": "D10.6", "name": "Regulatory Retention Alignment", "governs": "Whether retention schedules are explicitly aligned to regulatory requirements across all applicable jurisdictions.", "refs": "GDPR Art.5(1)(e) EU AI Act Art.12 multiple jurisdictions", "tags": ["EU AI Act", "GDPR / UK GDPR"]}, {"id": "D10.7", "name": "Data Minimisation", "governs": "Whether data is collected and retained only to the extent necessary for its documented purpose.", "refs": "GDPR Art.5(1)(c) EU AI Act Art.10", "tags": ["EU AI Act", "GDPR / UK GDPR"]}, {"id": "D10.8", "name": "Lifecycle Audit Trail", "governs": "Whether an auditable record of data asset lifecycle events is maintained, including creation, change, transfer, archival, and deletion.", "refs": "ISO 42001 Clause 7.5 EU AI Act Art.12 GDPR Art.5(2)", "tags": ["ISO/IEC 42001", "EU AI Act", "GDPR / UK GDPR"]}], "measureNames": ["Retention Policy", "Archival Process", "Deletion & Right to Erasure", "End-of-Life Governance", "AI Training Data Retention", "Regulatory Retention Alignment", "Data Minimisation", "Lifecycle Audit Trail"], "impact": "Balances retention, auditability, erasure, consent, disposal, and AI record-keeping obligations across the lifecycle."}, {"id": "D11", "name": "Organisational Readiness", "weighting": "8.33%", "measureCount": 10, "purpose": "Technical governance controls fail without organisational capability to design, implement, and sustain them. This domain governs the human side of data and AI governance: data literacy, AI literacy, change management capability, training programmes, executive commitment, and the cultural conditions that make governance stick. Organisations that score highly in technical domains but poorly here are typically running governance on the effort of a small expert team with limited organisational penetration. That model does not scale and does not survive personnel change.", "regulatoryContext": "EU AI Act Article 4 (AI literacy — operators and providers must ensure sufficient AI literacy for their staff). ISO 42001 Clause 7 (support: competence, awareness, communication). ISO 8000-8 Clause 7.", "standards": ["ISO 8000", "ISO/IEC 42001", "EU AI Act", "DAMA DMBOK"], "measures": [{"id": "D11.1", "name": "Data Literacy", "governs": "Whether data literacy is assessed across the organisation and whether a structured programme is in place to improve it.", "refs": "ISO 8000-8 Clause 7 ISO 42001 Clause 7.2", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D11.2", "name": "AI Literacy", "governs": "Whether staff understand AI capabilities, limitations, and risks sufficiently to use AI outputs responsibly and to govern AI systems appropriately.", "refs": "EU AI Act Art.4 ISO 42001 Clause 7.2", "tags": ["ISO/IEC 42001", "EU AI Act"]}, {"id": "D11.3", "name": "Change Management Capability", "governs": "Whether the organisation has demonstrated capability to plan and deliver data and AI governance change programmes.", "refs": "ISO 8000-8 Clause 8 ISO 42001 Clause 8", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D11.4", "name": "Training Programme", "governs": "Whether a structured, role-appropriate training programme for data and AI governance exists and is actively maintained.", "refs": "ISO 8000-8 Clause 7 ISO 42001 Clause 7.2 EU AI Act Art.4", "tags": ["ISO 8000", "ISO/IEC 42001", "EU AI Act"]}, {"id": "D11.5", "name": "Executive Commitment", "governs": "Whether executive commitment to data and AI governance is demonstrated through investment decisions and visible leadership.", "refs": "ISO 8000-8 Clause 5 ISO 42001 Clause 5.1", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D11.6", "name": "Culture of Data Quality", "governs": "Whether data quality is treated as a shared organisational responsibility rather than the exclusive concern of the data team.", "refs": "ISO 8000-8 Clause 5 ISO 42001 Clause 5", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D11.7", "name": "Incentive Alignment", "governs": "Whether staff performance objectives are aligned to data quality and governance outcomes.", "refs": "ISO 8000-8 Clause 5 ISO 42001 Clause 5", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D11.8", "name": "Cross-Functional Collaboration", "governs": "Whether business and technology teams collaborate effectively on governance initiatives rather than operating in silos.", "refs": "ISO 8000-8 Clause 5 DAMA DMBOK Ch.3", "tags": ["ISO 8000", "DAMA DMBOK"]}, {"id": "D11.9", "name": "Governance Maturity Roadmap", "governs": "Whether the organisation has a documented, active, and executive-sponsored governance maturity roadmap.", "refs": "ISO 8000-8 Clause 6 ISO 42001 Clause 6", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D11.10", "name": "External Benchmarking", "governs": "Whether the organisation actively benchmarks its governance maturity against peer organisations and industry standards.", "refs": "ISO 8000-8 Clause 9 ISO 42001 Clause 9.3", "tags": ["ISO 8000", "ISO/IEC 42001"]}], "measureNames": ["Data Literacy", "AI Literacy", "Change Management Capability", "Training Programme", "Executive Commitment", "Culture of Data Quality", "Incentive Alignment", "Cross-Functional Collaboration", "Governance Maturity Roadmap", "External Benchmarking"], "impact": "Measures whether people, leadership, literacy, training, and culture can actually sustain data and AI governance."}, {"id": "D12", "name": "Sustainable & Maintainable", "weighting": "8.33%", "measureCount": 8, "purpose": "Governance that depends on heroic individual effort is governance waiting to fail. This domain governs the sustainability and maintainability of the data and AI governance programme itself: whether assets, processes, and AI models are documented, whether technical debt is managed, whether knowledge is retained when people leave, and whether there is a mechanism for continuous improvement. Organisations that perform well in Domains 1-11 but poorly here are typically building on foundations that will degrade as teams change and complexity grows.", "regulatoryContext": "ISO 8000-8 Clause 7 (documented information). ISO 42001 Clause 7.5 (documented information). EU AI Act Article 11 (technical documentation requirements for high-risk AI systems).", "standards": ["ISO 8000", "ISO/IEC 42001", "EU AI Act", "DAMA DMBOK"], "measures": [{"id": "D12.1", "name": "Documentation", "governs": "Whether data assets, pipelines, governance rules, and AI models are fully and currently documented.", "refs": "ISO 8000-8 Clause 7.5 ISO 42001 Clause 7.5 EU AI Act Art.11", "tags": ["ISO 8000", "ISO/IEC 42001", "EU AI Act"]}, {"id": "D12.2", "name": "Technical Debt Management", "governs": "Whether a process exists to identify, prioritise, and systematically reduce data and AI technical debt.", "refs": "ISO 8000-61 ISO 42001 Clause 10", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D12.3", "name": "Onboarding Efficiency", "governs": "Whether new team members can become productive within 30 days using existing documentation and onboarding processes.", "refs": "ISO 8000-8 Clause 7 DAMA DMBOK Ch.3", "tags": ["ISO 8000", "DAMA DMBOK"]}, {"id": "D12.4", "name": "Runbooks & Playbooks", "governs": "Whether runbooks and playbooks are available for all routine support, incident management, and governance tasks.", "refs": "ISO 8000-61 ISO 42001 Clause 7.5", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D12.5", "name": "Total Cost of Ownership", "governs": "Whether the long-term total cost of ownership of the data and AI governance programme is understood, planned, and sustainable.", "refs": "ISO 8000-8 ISO 42001 Clause 6", "tags": ["ISO 8000", "ISO/IEC 42001"]}, {"id": "D12.6", "name": "Version Control", "governs": "Whether configurations, schemas, transformation logic, governance rules, and AI model artefacts are version-controlled.", "refs": "ISO 8000-8 Clause 7.5 ISO 42001 Clause 7.5 EU AI Act Art.11", "tags": ["ISO 8000", "ISO/IEC 42001", "EU AI Act"]}, {"id": "D12.7", "name": "Knowledge Retention", "governs": "Whether processes are in place to prevent critical knowledge loss through staff turnover and to transfer knowledge systematically.", "refs": "ISO 8000-8 Clause 7 DAMA DMBOK Ch.3", "tags": ["ISO 8000", "DAMA DMBOK"]}, {"id": "D12.8", "name": "Continuous Improvement", "governs": "Whether a formal mechanism exists to capture lessons learned from governance activity and drive systematic improvement.", "refs": "ISO 8000-8 Clause 10 ISO 42001 Clause 10", "tags": ["ISO 8000", "ISO/IEC 42001"]}], "measureNames": ["Documentation", "Technical Debt Management", "Onboarding Efficiency", "Runbooks & Playbooks", "Total Cost of Ownership", "Version Control", "Knowledge Retention", "Continuous Improvement"], "impact": "Ensures governance survives personnel change, technical debt, model drift, documentation decay, and process entropy."}], "standards": ["ISO 8000", "ISO/IEC 42001", "EU AI Act", "GDPR / UK GDPR", "NIST AI RMF", "DAMA DMBOK", "ISO 27001", "Sector regulation"]};
+const domains = DATA.domains;
+const standards = DATA.standards;
+let selected = 0;
+let explodedAll = false;
+let activeStandard = 'All';
+let rotation = -6;
+let searchTerm = '';
+let tiltOn = true;
+
+const wheelTilt = document.getElementById('wheelTilt');
+const defs = document.getElementById('defs');
+const detail = document.getElementById('detail');
+const filters = document.getElementById('filters');
+const stdGrid = document.getElementById('stdGrid');
+const scene = document.getElementById('scene');
+const centerSub = document.getElementById('centerSub');
+const tiltBtn = document.getElementById('tiltBtn');
+
+if(!(window.CSS && CSS.supports && CSS.supports('transform-style','preserve-3d'))) {
+  document.body.classList.add('no-3d');
+}
+
+const palette = domains.map((_,i)=>{
+  const hue = 188 + i*13;
+  return {
+    a:`hsl(${hue}, 88%, 60%)`,
+    b:`hsl(${hue+38}, 80%, 64%)`,
+    c:`hsl(${hue+16}, 82%, 36%)`
+  };
+});
+
+function polar(r, angleDeg) {
+  const a = (angleDeg - 90) * Math.PI / 180;
+  return { x: r * Math.cos(a), y: r * Math.sin(a) };
+}
+function arcPath(inner, outer, start, end) {
+  const p1 = polar(outer, start), p2 = polar(outer, end);
+  const p3 = polar(inner, end), p4 = polar(inner, start);
+  const largeArc = end - start > 180 ? 1 : 0;
+  return [`M ${p1.x} ${p1.y}`, `A ${outer} ${outer} 0 ${largeArc} 1 ${p2.x} ${p2.y}`, `L ${p3.x} ${p3.y}`, `A ${inner} ${inner} 0 ${largeArc} 0 ${p4.x} ${p4.y}`, 'Z'].join(' ');
+}
+function shortName(name) {
+  return name.replace('Data ','').replace(' & ',' + ').replace('Sustainable & Maintainable','Sustainability');
+}
+function containsSearch(domain) {
+  if(!searchTerm) return true;
+  const hay = [domain.id, domain.name, domain.purpose, domain.regulatoryContext, ...domain.measureNames, ...domain.measures.map(m=>m.governs), ...domain.measures.map(m=>m.refs)].join(' ').toLowerCase();
+  return hay.includes(searchTerm.toLowerCase());
+}
+function domainMatchesFilter(domain) {
+  return activeStandard === 'All' || domain.standards.includes(activeStandard);
+}
+function drawDefs() {
+  defs.textContent = '';
+  palette.forEach((p,i)=>{
+    const grad = document.createElementNS('http://www.w3.org/2000/svg','linearGradient');
+    grad.id = `grad${i}`;
+    grad.setAttribute('x1','0%'); grad.setAttribute('y1','0%'); grad.setAttribute('x2','100%'); grad.setAttribute('y2','100%');
+    const s1 = document.createElementNS('http://www.w3.org/2000/svg','stop'); s1.setAttribute('offset','0%'); s1.setAttribute('stop-color',p.a);
+    const s2 = document.createElementNS('http://www.w3.org/2000/svg','stop'); s2.setAttribute('offset','58%'); s2.setAttribute('stop-color',p.b);
+    const s3 = document.createElementNS('http://www.w3.org/2000/svg','stop'); s3.setAttribute('offset','100%'); s3.setAttribute('stop-color',p.c);
+    grad.appendChild(s1); grad.appendChild(s2); grad.appendChild(s3);
+    defs.appendChild(grad);
+  });
+}
+function textEl(cls, x, y, text, size) {
+  const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+  t.setAttribute('class', cls); t.setAttribute('x', x.toFixed(2)); t.setAttribute('y', y.toFixed(2));
+  t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','middle');
+  if(size) t.setAttribute('font-size', size);
+  t.textContent = text;
+  return t;
+}
+function pathEl(cls, d, fill, transform) {
+  const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('class',cls); p.setAttribute('d',d); p.setAttribute('fill',fill);
+  if(transform) p.setAttribute('transform',transform);
+  return p;
+}
+function drawWheel() {
+  drawDefs();
+  wheelTilt.textContent = '';
+  const inner = 106, outer = 296, count = domains.length, gap = .9;
+  domains.forEach((d,i)=>{
+    const start = i*360/count + gap;
+    const end = (i+1)*360/count - gap;
+    const mid = (start+end)/2;
+    const path = arcPath(inner, outer, start, end);
+    const pText = polar(208, mid);
+    const pSub = polar(238, mid);
+    const explode = explodedAll || i === selected ? 29 : 0;
+    const exp = polar(explode, mid);
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.classList.add('segment-group');
+    if(i===selected) g.classList.add('selected');
+    if(!domainMatchesFilter(d) || !containsSearch(d)) g.classList.add('dimmed');
+    g.setAttribute('data-index', i);
+    g.setAttribute('transform', `translate(${exp.x} ${exp.y})`);
+    g.appendChild(pathEl('segment-depth', path, palette[i].c, 'translate(16 24)'));
+    const face = pathEl('segment-face', path, `url(#grad${i})`);
+    face.setAttribute('tabindex','0'); face.setAttribute('role','button'); face.setAttribute('aria-label', `${d.id} ${d.name}`);
+    g.appendChild(face);
+    g.appendChild(textEl('seg-label', pText.x, pText.y, d.id));
+    g.appendChild(textEl('seg-sub', pSub.x, pSub.y, shortName(d.name).slice(0,18)));
+    g.addEventListener('click', () => selectDomain(i));
+    g.addEventListener('keydown', (ev) => { if(ev.key==='Enter' || ev.key===' ') { ev.preventDefault(); selectDomain(i); } });
+    wheelTilt.appendChild(g);
+  });
+  const rings = document.createElementNS('http://www.w3.org/2000/svg','g');
+  rings.appendChild(pathEl('center-disc', 'M 0 -98 A 98 98 0 1 1 -0.01 -98 Z', 'rgba(6,14,27,.95)'));
+  rings.lastChild.setAttribute('stroke','rgba(255,255,255,.32)'); rings.lastChild.setAttribute('stroke-width','2');
+  const ring2 = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  ring2.setAttribute('cx','0'); ring2.setAttribute('cy','0'); ring2.setAttribute('r','70'); ring2.setAttribute('fill','none'); ring2.setAttribute('stroke','rgba(103,232,249,.35)'); ring2.setAttribute('stroke-width','1.3');
+  rings.appendChild(ring2);
+  rings.addEventListener('click', resetView);
+  wheelTilt.appendChild(rings);
+}
+function renderFilters() {
+  filters.textContent = '';
+  ['All', ...standards].forEach(std => {
+    const btn = document.createElement('button');
+    btn.type='button'; btn.className='std-filter'; btn.textContent=std;
+    if(std===activeStandard) btn.classList.add('active');
+    btn.addEventListener('click',()=>{ activeStandard=std; renderFilters(); drawWheel(); renderMatrix(); });
+    filters.appendChild(btn);
+  });
+}
+function renderDetail() {
+  const d = domains[selected];
+  centerSub.textContent = `${d.id} selected`;
+  const standardChips = d.standards.map(s=>`<span class="chip"><b>↳</b>${s}</span>`).join('');
+  const measures = d.measures.map(m=>{
+    const hidden = searchTerm && ![m.id,m.name,m.governs,m.refs,d.name,d.id].join(' ').toLowerCase().includes(searchTerm.toLowerCase()) ? ' hidden' : '';
+    const refs = m.refs ? `<div class="measure-refs">${m.refs}</div>` : '';
+    return `<div class="measure${hidden}"><div class="measure-id">${m.id}</div><div><div class="measure-name">${m.name}</div><div class="measure-gov">${m.governs}</div>${refs}</div></div>`;
+  }).join('');
+  detail.innerHTML = `
+    <div class="detail-head">
+      <div><div class="domain-kicker">${d.id} · Dimension</div><h2 class="domain-title">${d.name}</h2></div>
+      <div class="score-chip"><strong>${d.weighting}</strong><span>${d.measureCount} measures</span></div>
+    </div>
+    <div class="detail-body">
+      <p class="copy">${d.purpose}</p>
+      <div class="impact"><strong>Exploded view:</strong> ${d.impact}</div>
+      <div class="section-title">Standards and regulatory mapping</div>
+      <div class="chips">${standardChips}</div>
+      <p class="copy" style="margin-top:10px">${d.regulatoryContext}</p>
+      <div class="section-title">Measures in this dimension</div>
+      <div class="measure-list">${measures}</div>
+    </div>`;
+}
+function renderMatrix() {
+  stdGrid.textContent = '';
+  const visibleStandards = standards.filter(s => s==='Sector regulation' ? domains.some(d=>d.standards.includes(s)) : true);
+  document.getElementById('coverageCount').textContent = `${visibleStandards.length} references`;
+  visibleStandards.forEach(std => {
+    const ds = domains.filter(d=>d.standards.includes(std));
+    const row = document.createElement('div');
+    row.className='std-row';
+    row.innerHTML = `<div class="std-name">${std}</div><div class="domain-tags">${ds.map(d=>`<span class="tiny-domain" data-domain="${d.id}">${d.id} · ${d.name}</span>`).join('')}</div>`;
+    row.querySelectorAll('.tiny-domain').forEach(el=>el.addEventListener('click',()=>{
+      const idx = domains.findIndex(x=>x.id===el.dataset.domain); if(idx>=0) selectDomain(idx);
+      window.scrollTo({top:0, behavior:'smooth'});
+    }));
+    stdGrid.appendChild(row);
+  });
+}
+function selectDomain(i) {
+  selected = i;
+  explodedAll = false;
+  document.getElementById('explodeBtn').classList.remove('active');
+  drawWheel(); renderDetail();
+}
+function resetView() {
+  selected = 0; explodedAll = false; activeStandard = 'All'; searchTerm=''; rotation=-6; tiltOn=true;
+  document.documentElement.style.setProperty('--rz', rotation+'deg');
+  document.documentElement.style.setProperty('--tilt','58deg');
+  document.getElementById('searchBox').value='';
+  document.getElementById('explodeBtn').classList.remove('active');
+  tiltBtn.classList.add('active');
+  renderFilters(); drawWheel(); renderDetail(); renderMatrix();
+}
+
+document.getElementById('explodeBtn').addEventListener('click', (e)=>{
+  explodedAll = !explodedAll;
+  e.currentTarget.classList.toggle('active', explodedAll);
+  centerSub.textContent = explodedAll ? 'exploded view' : `${domains[selected].id} selected`;
+  drawWheel();
+});
+document.getElementById('resetBtn').addEventListener('click', resetView);
+tiltBtn.addEventListener('click', (e)=>{
+  tiltOn = !tiltOn;
+  e.currentTarget.classList.toggle('active', tiltOn);
+  document.documentElement.style.setProperty('--tilt', tiltOn ? '58deg' : '0deg');
+});
+document.getElementById('searchBox').addEventListener('input', e=>{
+  searchTerm = e.target.value.trim(); drawWheel(); renderDetail();
+});
+
+let pointerDown=false, dragging=false, startX=0, startY=0, startRot=rotation;
+scene.addEventListener('pointerdown', e=>{
+  pointerDown=true; dragging=false; startX=e.clientX; startY=e.clientY; startRot=rotation;
+});
+scene.addEventListener('pointermove', e=>{
+  if(!pointerDown) return;
+  const dx=e.clientX-startX, dy=e.clientY-startY;
+  if(!dragging) {
+    if(Math.abs(dx) < 9 || Math.abs(dx) < Math.abs(dy)*1.15) return;
+    dragging=true;
+    try { scene.setPointerCapture(e.pointerId); } catch(_){}
+  }
+  rotation = startRot + dx*0.28;
+  document.documentElement.style.setProperty('--rz', rotation+'deg');
+  e.preventDefault();
+}, {passive:false});
+scene.addEventListener('pointerup', e=>{ pointerDown=false; dragging=false; try { scene.releasePointerCapture(e.pointerId); } catch(_){} });
+scene.addEventListener('pointercancel', ()=>{ pointerDown=false; dragging=false; });
+
+try { drawWheel(); renderFilters(); renderDetail(); renderMatrix(); }
+catch(err) {
+  const visual = document.querySelector('.visual-card');
+  if(visual) visual.insertAdjacentHTML('beforeend', `<div class="impact" style="position:relative;z-index:10;margin-top:12px"><strong>Render issue:</strong> ${err.message}</div>`);
+  throw err;
+}
+</script>
+</body>
+</html>
