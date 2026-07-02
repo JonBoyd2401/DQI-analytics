@@ -237,7 +237,9 @@ function inferIntent(text: string): Intent {
 
 function visualFromPrompt(text: string, current?: GeneratedWidget['visual']): GeneratedWidget['visual'] {
   const chartType = text.includes('donut') || text.includes('pie') ? 'donut'
-    : text.includes('bar') ? 'bar' : text.includes('area') ? 'area'
+    : /(?:horizontal|ranked)(?:\s+\w+){0,3}\s+bars?/.test(text) ? 'horizontalBar'
+      : /stacked(?:\s+\w+){0,2}\s+(?:bars?|columns?)/.test(text) ? 'stackedBar'
+        : text.includes('bar') || text.includes('column') ? 'bar' : text.includes('area') ? 'area'
       : text.includes('kpi') || text.includes('scorecard') || text.includes('big number') ? 'kpi'
         : text.includes('line chart') || text.includes('use lines') || text.includes('trend') ? 'line' : current?.chartType ?? 'line';
   const palette = text.includes('sunset') || text.includes('warm') || text.includes('orange') || text.includes('red') || text.includes('pink') ? 'sunset'
@@ -427,6 +429,7 @@ function qwenSystemPrompt(): string {
     'You map natural-language DQI audit questions to the closest governed semantic catalogue entries.',
     'Return JSON only. Never return Elasticsearch DSL, scripts, formulas, prose outside JSON, or identifiers not present below.',
     'Choose one metricId and one dimensionId. Infer intent, timeRangeWeeks (4, 12, or 26), filters, and optional chartType/palette/theme.',
+    'Allowed chartType values: line, area, bar, horizontalBar, stackedBar, donut, kpi.',
     'If wording is vague, select the closest business meaning rather than requiring exact phrases.',
     'JSON shape: {"metricId":"metric.x","dimensionId":"dimension.x","intent":"trend|breakdown|comparison|top_n|exception_review|coverage_report","timeRangeWeeks":12,"filters":[{"field":"region","value":"EU"}],"visual":{"chartType":"line","palette":"aurora","theme":"dark"},"confidence":0.0,"rationale":"short explanation"}',
     `Metrics: ${JSON.stringify(metricCatalogue)}`,

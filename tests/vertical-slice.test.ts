@@ -59,6 +59,15 @@ describe('natural-language DQI audit widgets', () => {
     expect(semanticEdit.widget.filters).toContainEqual({ field: 'environment', operator: 'equals', value: 'Production' });
   });
 
+  it('supports governed horizontal and stacked bar visual styles', () => {
+    const ranked = generateWidget({ prompt: 'Rank blocked events by policy as horizontal blue bars for the last 12 weeks' }, now);
+    expect(ranked.widget.visual).toMatchObject({ chartType: 'horizontalBar', palette: 'ocean' });
+
+    const stacked = generateWidget({ prompt: 'Trend AI requests by decision over 12 weeks as a stacked bar chart' }, now);
+    expect(stacked.widget.visual.chartType).toBe('stackedBar');
+    expect(stacked.widget.grain).toBe('week');
+  });
+
   it('only introduces a date histogram for an explicit time trend', () => {
     const categorical = generateWidget({ prompt: 'Show blocked events by business unit for the last 12 weeks as a bar chart' });
     expect(categorical.widget.grain).toBe('none');

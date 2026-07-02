@@ -91,7 +91,7 @@ export const widgetRefinementRequestSchema = z.object({
 }).strict();
 
 export const widgetVisualSchema = z.object({
-  chartType: z.enum(['line', 'area', 'bar', 'donut', 'kpi']),
+  chartType: z.enum(['line', 'area', 'bar', 'horizontalBar', 'stackedBar', 'donut', 'kpi']),
   palette: z.enum(['aurora', 'ocean', 'sunset', 'mono']),
   theme: z.enum(['dark', 'light']),
   showLegend: z.boolean(),

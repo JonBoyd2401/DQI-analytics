@@ -17,7 +17,7 @@ export function buildApp() {
     regulations: dqiDemoCatalogue.regulations,
     regions: dqiDemoCatalogue.regions,
     businessUnits: dqiDemoCatalogue.businessUnits,
-    visuals: ['Line', 'Area', 'Bar', 'Donut', 'KPI scorecard'],
+    visuals: ['Line', 'Area', 'Column', 'Horizontal bar', 'Stacked bar', 'Donut', 'KPI scorecard'],
     palettes: ['Aurora', 'Ocean', 'Sunset', 'Mono']
   }));
   app.post('/api/v1/widgets/generate', async (request, reply) => {
