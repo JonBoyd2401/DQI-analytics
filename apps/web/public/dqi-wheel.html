@@ -49,6 +49,7 @@
     }
     h1 { margin:0; font-size:clamp(24px, 3vw, 42px); letter-spacing:-.04em; line-height:1.04; }
     .subtitle { margin-top:5px; color:var(--muted); font-size:14px; }
+    .market-position { display:inline-block; margin-top:8px; color:#baf6ff; font-size:11px; font-weight:750; letter-spacing:.035em; }
     .pill-row { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
     .back-link {
       display:inline-flex; align-items:center; border:1px solid rgba(103,232,249,.45);
@@ -64,7 +65,7 @@
       display:grid; grid-template-columns:minmax(520px, 1.12fr) minmax(420px, .88fr);
       gap:24px; padding:10px clamp(18px, 4vw, 44px) 32px;
     }
-    .visual-card, .detail-card, .matrix-card, .region-card {
+    .visual-card, .detail-card, .matrix-card {
       background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.035));
       border:1px solid rgba(255,255,255,.12);
       border-radius:var(--radius); box-shadow:var(--shadow);
@@ -167,20 +168,14 @@
     .measure-gov { color:#aebfd3; font-size:12px; margin-top:4px; line-height:1.4; }
     .measure-refs { color:#dacfff; font-size:11px; margin-top:6px; }
     .matrix-card { padding:18px 20px 20px; }
-    .region-card { padding:18px 20px 20px; }
-    .region-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom:13px; }
-    .region-head h2 { margin:0; font-size:20px; letter-spacing:-.03em; }
-    .region-head p { margin:5px 0 0; color:var(--muted); font-size:12px; line-height:1.4; }
-    .region-grid { display:grid; gap:10px; }
-    .jurisdiction { border:1px solid rgba(255,255,255,.1); background:rgba(0,0,0,.12); border-radius:14px; padding:12px; }
-    .jurisdiction-top { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
-    .jurisdiction h3 { margin:0; color:#f3f8ff; font-size:14px; }
-    .jurisdiction .authority { margin-top:3px; color:#9eeaff; font-size:11px; font-weight:750; }
-    .jurisdiction p { margin:8px 0; color:#b8c8db; font-size:12px; line-height:1.45; }
-    .jurisdiction a { color:#93fbff; font-size:11px; text-decoration:none; }
-    .jurisdiction a:hover, .jurisdiction a:focus-visible { text-decoration:underline; outline:none; }
-    .domain-map { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
-    .domain-map button { padding:5px 7px; border-radius:999px; font-size:10px; color:#d7ecff; }
+    .std-authority { color:#9eeaff; font-size:10px; margin-top:3px; line-height:1.35; }
+    .std-source { display:inline-block; color:#93fbff; font-size:10px; margin-top:6px; text-decoration:none; }
+    .std-source:hover, .std-source:focus-visible { text-decoration:underline; outline:none; }
+    .regional-context { display:grid; gap:8px; margin-top:10px; }
+    .regional-item { border:1px solid rgba(255,255,255,.1); background:rgba(0,0,0,.12); border-radius:12px; padding:10px; }
+    .regional-item strong { color:#f3f8ff; font-size:12px; }
+    .regional-item span { display:block; color:#9eeaff; font-size:10px; margin-top:3px; }
+    .regional-item p { color:#aebfd3; font-size:11px; line-height:1.4; margin:7px 0 0; }
     .matrix-title { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px; }
     .matrix-title h2 { margin:0; font-size:20px; letter-spacing:-.03em; }
     .std-grid { display:grid; gap:9px; }
@@ -227,6 +222,7 @@
       <div>
         <h1>DQI 3D Dimension Wheel</h1>
         <div class="subtitle">12 equally weighted dimensions · click any segment to explode and inspect standards mapping</div>
+        <div class="market-position">DQI — the most comprehensive data &amp; AI compliance standard on the market.</div>
       </div>
     </div>
     <div class="pill-row">
@@ -267,10 +263,6 @@
         <div class="matrix-title"><h2>Standards coverage map</h2><span class="pill" id="coverageCount"></span></div>
         <div class="std-grid" id="stdGrid"></div>
       </section>
-      <section class="region-card">
-        <div class="region-head"><div><h2>Middle East compliance map</h2><p>Indicative DQI alignment to data and AI governance instruments and responsible bodies.</p></div><span class="pill">5 regimes</span></div>
-        <div class="region-grid" id="middleEastGrid"></div>
-      </section>
     </div>
   </main>
 
@@ -284,6 +276,7 @@ const DATA = {"domains": [{"id": "D1", "name": "Data Value & Alignment", "weight
 const MIDDLE_EAST = [
   {
     jurisdiction:'United Arab Emirates (federal)',
+    standard:'UAE Federal PDPL',
     instrument:'Federal Decree-Law No. 45 of 2021 — Personal Data Protection Law',
     authority:'UAE Data Office',
     focus:'Accountability, lawful processing, data-subject rights, security, breach governance and cross-border transfers.',
@@ -292,6 +285,7 @@ const MIDDLE_EAST = [
   },
   {
     jurisdiction:'Dubai International Financial Centre',
+    standard:'DIFC DP Law & AI Regulation',
     instrument:'DIFC Data Protection Law No. 5 of 2020 and Regulation 10 for autonomous systems',
     authority:'DIFC Commissioner of Data Protection',
     focus:'High-risk processing, DPIAs, controller accountability, individual rights, international transfers and autonomous-system governance.',
@@ -300,6 +294,7 @@ const MIDDLE_EAST = [
   },
   {
     jurisdiction:'Kingdom of Saudi Arabia',
+    standard:'Saudi PDPL & AI Ethics',
     instrument:'Personal Data Protection Law and SDAIA AI Ethics Principles',
     authority:'Saudi Data & AI Authority (SDAIA)',
     focus:'Lawfulness, fairness, transparency, purpose limitation, data quality, privacy, AI fairness, explainability, robustness and accountability.',
@@ -308,6 +303,7 @@ const MIDDLE_EAST = [
   },
   {
     jurisdiction:'State of Qatar',
+    standard:'Qatar PDPPL & Data Policy',
     instrument:'Law No. 13 of 2016 on Protecting Personal Data Privacy and national Data Management Policy',
     authority:'Ministry of Communications and Information Technology (MCIT)',
     focus:'Privacy governance, lawful and transparent data handling, security, retention, access control, records and public-sector data management.',
@@ -316,6 +312,7 @@ const MIDDLE_EAST = [
   },
   {
     jurisdiction:'Kingdom of Bahrain',
+    standard:'Bahrain PDPL',
     instrument:'Law No. 30 of 2018 with respect to Personal Data Protection',
     authority:'Personal Data Protection Authority',
     focus:'Processing accountability, rights, security controls, sensitive data, transfers, retention and independent regulatory oversight.',
@@ -324,7 +321,11 @@ const MIDDLE_EAST = [
   }
 ];
 const domains = DATA.domains;
-const standards = DATA.standards;
+MIDDLE_EAST.forEach(regime => regime.domains.forEach(id => {
+  const domain = domains.find(item => item.id === id);
+  if(domain && !domain.standards.includes(regime.standard)) domain.standards.push(regime.standard);
+}));
+const standards = [...DATA.standards, ...MIDDLE_EAST.map(regime => regime.standard)];
 let selected = 0;
 let explodedAll = false;
 let activeStandard = 'All';
@@ -369,7 +370,8 @@ function shortName(name) {
 }
 function containsSearch(domain) {
   if(!searchTerm) return true;
-  const hay = [domain.id, domain.name, domain.purpose, domain.regulatoryContext, ...domain.measureNames, ...domain.measures.map(m=>m.governs), ...domain.measures.map(m=>m.refs)].join(' ').toLowerCase();
+  const regional = MIDDLE_EAST.filter(regime => regime.domains.includes(domain.id)).flatMap(regime => [regime.standard, regime.jurisdiction, regime.authority, regime.instrument, regime.focus]);
+  const hay = [domain.id, domain.name, domain.purpose, domain.regulatoryContext, ...domain.standards, ...regional, ...domain.measureNames, ...domain.measures.map(m=>m.governs), ...domain.measures.map(m=>m.refs)].join(' ').toLowerCase();
   return hay.includes(searchTerm.toLowerCase());
 }
 function domainMatchesFilter(domain) {
@@ -454,6 +456,8 @@ function renderDetail() {
   const d = domains[selected];
   centerSub.textContent = `${d.id} selected`;
   const standardChips = d.standards.map(s=>`<span class="chip"><b>↳</b>${s}</span>`).join('');
+  const regionalMappings = MIDDLE_EAST.filter(regime => regime.domains.includes(d.id));
+  const regionalContext = regionalMappings.map(regime => `<div class="regional-item"><strong>${regime.standard}</strong><span>${regime.authority} · ${regime.jurisdiction}</span><p>${regime.focus} <a class="std-source" href="${regime.source}" target="_blank" rel="noopener noreferrer">Official source ↗</a></p></div>`).join('');
   const measures = d.measures.map(m=>{
     const hidden = searchTerm && ![m.id,m.name,m.governs,m.refs,d.name,d.id].join(' ').toLowerCase().includes(searchTerm.toLowerCase()) ? ' hidden' : '';
     const refs = m.refs ? `<div class="measure-refs">${m.refs}</div>` : '';
@@ -470,6 +474,7 @@ function renderDetail() {
       <div class="section-title">Standards and regulatory mapping</div>
       <div class="chips">${standardChips}</div>
       <p class="copy" style="margin-top:10px">${d.regulatoryContext}</p>
+      ${regionalMappings.length ? `<div class="section-title">Middle East regulatory alignment</div><div class="regional-context">${regionalContext}</div>` : ''}
       <div class="section-title">Measures in this dimension</div>
       <div class="measure-list">${measures}</div>
     </div>`;
@@ -480,28 +485,15 @@ function renderMatrix() {
   document.getElementById('coverageCount').textContent = `${visibleStandards.length} references`;
   visibleStandards.forEach(std => {
     const ds = domains.filter(d=>d.standards.includes(std));
+    const regime = MIDDLE_EAST.find(item => item.standard === std);
     const row = document.createElement('div');
     row.className='std-row';
-    row.innerHTML = `<div class="std-name">${std}</div><div class="domain-tags">${ds.map(d=>`<span class="tiny-domain" data-domain="${d.id}">${d.id} · ${d.name}</span>`).join('')}</div>`;
+    row.innerHTML = `<div><div class="std-name">${std}</div>${regime ? `<div class="std-authority">${regime.authority}<br>${regime.jurisdiction}</div><a class="std-source" href="${regime.source}" target="_blank" rel="noopener noreferrer">Official source ↗</a>` : ''}</div><div class="domain-tags">${ds.map(d=>`<span class="tiny-domain" data-domain="${d.id}">${d.id} · ${d.name}</span>`).join('')}</div>`;
     row.querySelectorAll('.tiny-domain').forEach(el=>el.addEventListener('click',()=>{
       const idx = domains.findIndex(x=>x.id===el.dataset.domain); if(idx>=0) selectDomain(idx);
       window.scrollTo({top:0, behavior:'smooth'});
     }));
     stdGrid.appendChild(row);
-  });
-}
-function renderMiddleEast() {
-  const grid = document.getElementById('middleEastGrid');
-  grid.textContent = '';
-  MIDDLE_EAST.forEach(regime => {
-    const card = document.createElement('article');
-    card.className = 'jurisdiction';
-    card.innerHTML = `<div class="jurisdiction-top"><div><h3>${regime.jurisdiction}</h3><div class="authority">${regime.authority}</div></div></div><p><strong>${regime.instrument}</strong><br>${regime.focus}</p><a href="${regime.source}" target="_blank" rel="noopener noreferrer">Official source ↗</a><div class="domain-map">${regime.domains.map(id => `<button type="button" data-domain="${id}" title="Open ${id}">${id}</button>`).join('')}</div>`;
-    card.querySelectorAll('[data-domain]').forEach(button => button.addEventListener('click', () => {
-      const index = domains.findIndex(domain => domain.id === button.dataset.domain);
-      if(index >= 0) selectDomain(index);
-    }));
-    grid.appendChild(card);
   });
 }
 function selectDomain(i) {
@@ -555,7 +547,7 @@ scene.addEventListener('pointermove', e=>{
 scene.addEventListener('pointerup', e=>{ pointerDown=false; dragging=false; try { scene.releasePointerCapture(e.pointerId); } catch(_){} });
 scene.addEventListener('pointercancel', ()=>{ pointerDown=false; dragging=false; });
 
-try { drawWheel(); renderFilters(); renderDetail(); renderMatrix(); renderMiddleEast(); }
+try { drawWheel(); renderFilters(); renderDetail(); renderMatrix(); }
 catch(err) {
   const visual = document.querySelector('.visual-card');
   if(visual) visual.insertAdjacentHTML('beforeend', `<div class="impact" style="position:relative;z-index:10;margin-top:12px"><strong>Render issue:</strong> ${err.message}</div>`);
