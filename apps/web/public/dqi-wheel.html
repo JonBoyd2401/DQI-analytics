@@ -321,11 +321,12 @@ const MIDDLE_EAST = [
   }
 ];
 const domains = DATA.domains;
+domains.forEach(domain => { domain.standards = domain.standards.filter(standard => standard !== 'Sector regulation'); });
 MIDDLE_EAST.forEach(regime => regime.domains.forEach(id => {
   const domain = domains.find(item => item.id === id);
   if(domain && !domain.standards.includes(regime.standard)) domain.standards.push(regime.standard);
 }));
-const standards = [...DATA.standards, ...MIDDLE_EAST.map(regime => regime.standard)];
+const standards = [...DATA.standards.filter(standard => standard !== 'Sector regulation'), ...MIDDLE_EAST.map(regime => regime.standard)];
 let selected = 0;
 let explodedAll = false;
 let activeStandard = 'All';
