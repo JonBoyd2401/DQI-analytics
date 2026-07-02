@@ -46,6 +46,19 @@ describe('natural-language DQI audit widgets', () => {
     expect(result.widget.visual.palette).toBe('ocean');
   });
 
+  it('applies partial conversational edits while inheriting unspecified report fields', async () => {
+    const originalPrompt = 'Show AI requests by integration for the last 12 weeks as an aurora area chart';
+    const visualEdit = await refineWidgetWithQwen({ originalPrompt, editPrompt: 'make it blue bars' }, now);
+    expect(visualEdit.widget.metric.id).toBe('metric.ai_requests');
+    expect(visualEdit.widget.dimension.id).toBe('dimension.integration');
+    expect(visualEdit.widget.visual).toMatchObject({ chartType: 'bar', palette: 'ocean' });
+
+    const semanticEdit = await refineWidgetWithQwen({ originalPrompt, editPrompt: 'instead show blocked rate by policy in production' }, now);
+    expect(semanticEdit.widget.metric.id).toBe('metric.blocked_rate');
+    expect(semanticEdit.widget.dimension.id).toBe('dimension.enforce_policy');
+    expect(semanticEdit.widget.filters).toContainEqual({ field: 'environment', operator: 'equals', value: 'Production' });
+  });
+
   it('only introduces a date histogram for an explicit time trend', () => {
     const categorical = generateWidget({ prompt: 'Show blocked events by business unit for the last 12 weeks as a bar chart' });
     expect(categorical.widget.grain).toBe('none');

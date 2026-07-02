@@ -123,6 +123,16 @@ function firstMatch<T extends string>(text: string, catalogue: Record<T, { alias
   return best && best.score > 0 ? { id: best.id, confidence: Math.min(0.98, 0.5 + best.score / 180) } : { id: fallback, confidence: 0.52 };
 }
 
+function hasExplicitAlias<T extends string>(text: string, catalogue: Record<T, { aliases: string[] }>): boolean {
+  const cleanText = normalise(text);
+  const textWords = new Set(words(cleanText));
+  return (Object.values(catalogue) as { aliases: string[] }[]).some((item) => item.aliases.some((alias: string) => {
+    const cleanAlias = normalise(alias);
+    const meaningful = words(cleanAlias).filter((word) => word.length >= 3);
+    return cleanAlias.length >= 3 && cleanText.includes(cleanAlias) || meaningful.length > 0 && meaningful.every((word) => textWords.has(word));
+  }));
+}
+
 function total(rows: DemoAggregateRow[], field: keyof DemoAggregateRow): number {
   return rows.reduce((sum, row) => sum + Number(row[field]), 0);
 }
@@ -484,7 +494,38 @@ export async function refineWidgetWithQwen(raw: unknown, now = new Date('2026-07
   } catch {
     proposal = undefined;
   }
-  return buildWidget(interpretWidgetPrompt({ prompt }, proposal), prompt, now, proposal);
+  const base = interpretWidgetPrompt({ prompt: originalPrompt.slice(0, 1000) });
+  const editText = editPrompt.toLowerCase();
+  const metricMatch = firstMatch(editText, metrics, base.metric.id);
+  const dimensionMatch = firstMatch(editText, dimensions, base.dimension.id);
+  const metricExplicit = hasExplicitAlias(editText, metrics);
+  const dimensionExplicit = hasExplicitAlias(editText, dimensions);
+  const metricId = metricExplicit ? (validatedMetricId(proposal?.metricId) ?? metricMatch.id) : base.metric.id;
+  const dimensionId = dimensionExplicit ? (validatedDimensionId(proposal?.dimensionId) ?? dimensionMatch.id) : base.dimension.id;
+  const incomingFilters = [...validatedFilters(proposal?.filters), ...promptFilters(editText)]
+    .filter((filter, index, list) => list.findIndex((item) => item.field === filter.field && item.value === filter.value) === index);
+  const replacedFields = new Set(incomingFilters.map((filter) => filter.field));
+  const filters = [...base.filters.filter((filter) => !replacedFields.has(filter.field)), ...incomingFilters].slice(0, 12);
+  const hasTimeEdit = /(?:last|past|over)\s+\d+\s+weeks?|last month|past month|quarter|half year|six months/.test(editText);
+  const hasIntentEdit = /trend|over time|weekly|compare|versus|\svs\s|top|highest|worst|biggest|exception|unresolved|coverage|evidence completeness/.test(editText);
+  const intent = hasIntentEdit ? (validatedIntent(proposal?.intent) ?? inferIntent(editText)) : base.grain === 'week' ? 'trend' : 'breakdown';
+  const metric = metrics[metricId];
+  const dimension = dimensions[dimensionId];
+  const visual = visualFromPrompt(editText, visualWithProposal(base.visual, proposal));
+  const weeks = hasTimeEdit ? (validatedWeeks(proposal?.timeRangeWeeks) ?? requestedWeeks(editText)) : base.timeRangeWeeks;
+  const edited = generatedWidgetSchema.parse({
+    ...base,
+    id: randomUUID(),
+    title: customTitle(editPrompt) ?? (metricId !== base.metric.id || dimensionId !== base.dimension.id ? `${metric.label} by ${dimension.label}` : base.title),
+    metric: { id: metricId, label: metric.label, format: metric.format },
+    dimension: { id: dimensionId, label: dimension.label },
+    timeRangeWeeks: weeks,
+    grain: intent === 'trend' ? 'week' : 'none',
+    filters,
+    visual,
+    interpretation: [`Latest edit: ${editPrompt}`, metric.label, `${dimension.label} breakdown`, `Last ${weeks} complete weeks`, `${visual.chartType} chart`, `${visual.palette} palette`]
+  });
+  return buildWidget(edited, prompt, now, proposal);
 }
 
 export function refineWidget(raw: unknown, now = new Date('2026-07-01T10:00:00.000Z')): WidgetGenerationResponse {
