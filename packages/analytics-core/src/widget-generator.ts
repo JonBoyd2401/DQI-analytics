@@ -1,4 +1,5 @@
 ﻿import { randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import {
   generatedWidgetSchema,
   widgetGenerationResponseSchema,
@@ -450,21 +451,23 @@ function buildWidget(widget: GeneratedWidget, prompt: string, now: Date, proposa
   const previous = Number(metricValue(widget.metric.id, allPrevious).toFixed(2));
   const changePercent = previous ? Number(((current - previous) / previous * 100).toFixed(1)) : 0;
   const intent = inferIntent(prompt.toLowerCase());
+  const elasticsearchDsl = {
+    size: 0,
+    query: { bool: { filter: [{ term: { policy_pack: 'eu-ai-act-2024-1689' } }, ...widget.filters.map((filter) => ({ term: { [`${filter.field}.keyword`]: filter.value } })), { range: { event_timestamp: { gte: `now-${widget.timeRangeWeeks}w/w`, lt: 'now/w' } } }] } },
+    aggs: widget.grain === 'week' ? {
+      by_week: {
+        date_histogram: { field: 'event_timestamp', calendar_interval: 'week' },
+        aggs: { by_dimension: { terms: { field: `${String(dimensions[widget.dimension.id].field ?? 'overall')}.keyword`, size: 30 } } }
+      }
+    } : { by_dimension: { terms: { field: `${String(dimensions[widget.dimension.id].field ?? 'overall')}.keyword`, size: 30 } } }
+  };
+  const queryFingerprint = createHash('sha256').update(JSON.stringify(elasticsearchDsl)).digest('hex');
   return widgetGenerationResponseSchema.parse({
     widget, series,
     query: {
       naturalLanguage: prompt,
       semanticPlan: { metricId: widget.metric.id, dimensionId: widget.dimension.id, intent, timeRangeWeeks: widget.timeRangeWeeks, grain: widget.grain, policyPack: 'eu-ai-act-2024-1689', filters: widget.filters },
-      elasticsearchDsl: {
-        size: 0,
-        query: { bool: { filter: [{ term: { policy_pack: 'eu-ai-act-2024-1689' } }, ...widget.filters.map((filter) => ({ term: { [`${filter.field}.keyword`]: filter.value } })), { range: { event_timestamp: { gte: `now-${widget.timeRangeWeeks}w/w`, lt: 'now/w' } } }] } },
-        aggs: widget.grain === 'week' ? {
-          by_week: {
-            date_histogram: { field: 'event_timestamp', calendar_interval: 'week' },
-            aggs: { by_dimension: { terms: { field: `${String(dimensions[widget.dimension.id].field ?? 'overall')}.keyword`, size: 30 } } }
-          }
-        } : { by_dimension: { terms: { field: `${String(dimensions[widget.dimension.id].field ?? 'overall')}.keyword`, size: 30 } } }
-      }
+      elasticsearchDsl
     },
     semanticEngine: {
       mode: proposal ? 'ai-proposal-validated' : 'deterministic-fallback',
@@ -475,10 +478,12 @@ function buildWidget(widget: GeneratedWidget, prompt: string, now: Date, proposa
     },
     summary: { current, previous, changePercent, direction: Math.abs(changePercent) < 0.1 ? 'flat' : changePercent > 0 ? 'up' : 'down' },
     provenance: {
-      source: 'Synthetic DQI Audit Event Store', datasetVersion: database.version, generatedAt: now.toISOString(),
-      recordsScanned: database.rows.length, calculation: metrics[widget.metric.id].calculation,
+      evidenceType: 'demonstration', verificationStatus: 'demonstration-only',
+      source: 'DQI Demonstration Audit Event Store', backend: 'demonstration', indexName: `dqi-demo-audit-events-v${database.version}`,
+      datasetVersion: database.version, generatedAt: now.toISOString(), recordsScanned: database.rows.length, queryFingerprint,
+      calculation: metrics[widget.metric.id].calculation,
       regulatoryProfile: 'EU AI Act — Regulation (EU) 2024/1689',
-      disclaimer: 'Demonstration audit events are entirely fabricated and contain no real users, prompts, customers, or model activity.'
+      disclaimer: 'Representative demonstration evidence is isolated from production systems and contains no customer or personal data.'
     }
   });
 }

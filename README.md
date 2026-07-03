@@ -2,7 +2,7 @@
 
 An open-source, deterministic audit analytics foundation for AI governance. Users describe an audit KPI and visual style in natural language; DQI compiles that request into a governed semantic plan and Elasticsearch/OpenSearch query, calculates the answer from audit evidence, and renders a traceable compliance report.
 
-The demonstration uses entirely fabricated DQI usage, assessment, model, environment, integration, and control-finding events. Its featured policy profile is the EU AI Act (Regulation (EU) 2024/1689). It supports audit exploration and is not legal advice or a determination of compliance.
+The demonstration uses generated DQI usage, assessment, model, environment, integration, and control-finding events that are isolated from production and contain no customer or personal data. Its featured policy profile is the EU AI Act (Regulation (EU) 2024/1689). It supports audit exploration and is not legal advice or a determination of compliance.
 
 ## Quick start
 

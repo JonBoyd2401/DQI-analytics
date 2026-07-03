@@ -591,14 +591,18 @@ function AuditWidget({ result }: { result: WidgetGenerationResponse }) {
         </div>
       </div>
       <details>
-        <summary>Audit evidence & provenance</summary>
+        <summary>{provenance.evidenceType === 'verified-connected' ? 'Verified audit evidence & provenance' : 'Demonstration audit evidence & provenance'}</summary>
         <div className="evidence-grid">
+          <Evidence label="Evidence status" value={provenance.verificationStatus === 'query-verified' ? 'Verified connected query' : 'Demonstration only'} />
           <Evidence label="Source" value={provenance.source} />
+          <Evidence label="Backend / index" value={`${provenance.backend} / ${provenance.indexName}`} />
           <Evidence label="Policy profile" value={provenance.regulatoryProfile} />
           <Evidence label="Calculation" value={provenance.calculation} />
           <Evidence label="Rows scanned" value={provenance.recordsScanned.toLocaleString()} />
+          <Evidence label="Dataset version" value={provenance.datasetVersion} />
+          <Evidence label="Query fingerprint" value={provenance.queryFingerprint.slice(0, 16)} />
         </div>
-        <p>{provenance.disclaimer} This demonstration supports audit exploration and is not legal advice or a determination of compliance.</p>
+        <p>{provenance.disclaimer} {provenance.evidenceType === 'verified-connected' ? 'The query fingerprint binds this report to the executed governed query.' : 'Connect an authorised Elasticsearch or OpenSearch source before treating results as operational audit evidence.'}</p>
       </details>
     </section>
   );

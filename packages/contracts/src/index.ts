@@ -187,10 +187,15 @@ export const widgetGenerationResponseSchema = z.object({
     direction: z.enum(['up', 'down', 'flat'])
   }).strict(),
   provenance: z.object({
-    source: z.literal('Synthetic DQI Audit Event Store'),
-    datasetVersion: z.literal('2026.2'),
+    evidenceType: z.enum(['demonstration', 'verified-connected']),
+    verificationStatus: z.enum(['demonstration-only', 'query-verified']),
+    source: z.string().min(1),
+    backend: z.enum(['demonstration', 'elasticsearch', 'opensearch']),
+    indexName: z.string().min(1),
+    datasetVersion: z.string().min(1),
     generatedAt: z.string().datetime(),
     recordsScanned: z.number().int().positive(),
+    queryFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
     calculation: z.string(),
     regulatoryProfile: z.literal('EU AI Act — Regulation (EU) 2024/1689'),
     disclaimer: z.string()

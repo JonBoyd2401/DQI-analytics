@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { createHash } from 'node:crypto';
 import { compileQuery, dqiAuditModel, evaluate, explain, generateWidget, generateWidgetWithQwen, interpretWidgetPrompt, normalizeCompleteWeeks, planQuery, refineWidget, refineWidgetWithQwen, runAnalytics, SyntheticConnector, type Expression } from '@dqi/analytics-core';
 
 const validRequest = { metricIds: ['metric.ai_requests'], dimensionIds: ['dimension.integration'], time: { fieldId: 'dimension.event_timestamp', range: 'last_12_complete_weeks', grain: 'week' }, visualisationHint: 'line' };
@@ -106,6 +107,8 @@ describe('natural-language DQI audit widgets', () => {
     expect(result.query.semanticPlan.policyPack).toBe('eu-ai-act-2024-1689');
     expect(result.series).toHaveLength(6);
     expect(result.provenance.recordsScanned).toBe(112320);
+    expect(result.provenance.evidenceType).toBe('demonstration');
+    expect(result.provenance.queryFingerprint).toBe(createHash('sha256').update(JSON.stringify(result.query.elasticsearchDsl)).digest('hex'));
     expect(result.semanticEngine.modelId).toBe('JonBoyd2401/Qwen3.6');
   });
 
