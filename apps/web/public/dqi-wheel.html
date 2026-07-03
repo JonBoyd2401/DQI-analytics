@@ -115,16 +115,16 @@
     .segment-group.dimmed { opacity:.22; filter:saturate(.35); }
     .segment-group:hover .segment-face, .segment-group.selected .segment-face { filter:brightness(1.17) drop-shadow(0 0 10px rgba(103,232,249,.7)); }
     .seg-label { font-weight:800; font-size:16px; fill:#f8fbff; paint-order:stroke; stroke:rgba(0,0,0,.45); stroke-width:3px; pointer-events:none; }
-    .seg-sub { font-size:8px; letter-spacing:.09em; fill:rgba(245,250,255,.82); text-transform:uppercase; pointer-events:none; }
+    .seg-sub { font-size:7px; letter-spacing:.075em; fill:rgba(245,250,255,.86); text-transform:uppercase; pointer-events:none; }
     .center-disc { filter:drop-shadow(0 8px 14px rgba(0,0,0,.45)); cursor:pointer; }
     .upright-card {
-      position:absolute; z-index:4; top:50%; left:50%; transform:translate(-50%, -50%);
-      width:180px; min-height:124px; border-radius:28px;
+      position:absolute; z-index:4; top:18px; left:50%; transform:translateX(-50%);
+      width:156px; min-height:88px; border-radius:22px;
       background:linear-gradient(180deg, rgba(12,24,44,.95), rgba(9,15,28,.96));
       border:1px solid rgba(255,255,255,.16); display:grid; place-items:center; text-align:center;
       box-shadow:0 18px 48px rgba(0,0,0,.45); pointer-events:none;
     }
-    .upright-card strong { display:block; font-size:42px; letter-spacing:-.08em; }
+    .upright-card strong { display:block; font-size:34px; letter-spacing:-.08em; }
     .upright-card span { display:block; margin-top:3px; color:#bcd4ea; font-size:12px; text-transform:uppercase; letter-spacing:.12em; }
     .hint {
       color:#b6c6d9; font-size:13px; display:flex; gap:9px; align-items:center; justify-content:center;
@@ -264,8 +264,8 @@
       #filters button { width:100%; min-width:0; white-space:normal; line-height:1.25; }
       .scene { height:350px; width:100%; overflow:hidden; }
       .wheel-stage { width:min(88%, 290px); max-width:290px; }
-      .upright-card { width:126px; min-height:88px; border-radius:20px; }
-      .upright-card strong { font-size:29px; }
+      .upright-card { top:8px; width:112px; min-height:68px; border-radius:17px; }
+      .upright-card strong { font-size:26px; }
       .hint { font-size:11px; line-height:1.35; padding:8px 9px; }
       .detail-head { padding:17px 15px 13px; }
       .detail-body { padding:14px 15px 17px; max-height:none; overflow:visible; }
@@ -564,8 +564,8 @@ function drawWheel() {
     const end = (i+1)*360/count - gap;
     const mid = (start+end)/2;
     const path = arcPath(inner, outer, start, end);
-    const pText = polar(208, mid);
-    const pSub = polar(238, mid);
+    const pText = polar(176, mid);
+    const pSub = polar(252, mid);
     const explode = explodedAll || i === selected ? 29 : 0;
     const exp = polar(explode, mid);
     const g = document.createElementNS('http://www.w3.org/2000/svg','g');
@@ -579,7 +579,7 @@ function drawWheel() {
     face.setAttribute('tabindex','0'); face.setAttribute('role','button'); face.setAttribute('aria-label', `${d.id} ${d.name}`);
     g.appendChild(face);
     g.appendChild(textEl('seg-label', pText.x, pText.y, d.id));
-    g.appendChild(textEl('seg-sub', pSub.x, pSub.y, shortName(d.name).slice(0,18)));
+    g.appendChild(textEl('seg-sub', pSub.x, pSub.y, shortName(d.name).slice(0,14)));
     g.addEventListener('click', () => selectDomain(i));
     g.addEventListener('keydown', (ev) => { if(ev.key==='Enter' || ev.key===' ') { ev.preventDefault(); selectDomain(i); } });
     wheelTilt.appendChild(g);
