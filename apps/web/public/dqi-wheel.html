@@ -131,7 +131,7 @@
       padding:10px 12px; border:1px dashed rgba(255,255,255,.16); border-radius:16px; background:rgba(255,255,255,.04);
       position:relative; z-index:5;
     }
-    .right-stack { display:grid; grid-template-rows:auto auto; gap:24px; }
+    .left-stack, .right-stack { display:grid; align-content:start; gap:24px; min-width:0; }
     .detail-card { overflow:hidden; }
     .detail-head {
       display:flex; justify-content:space-between; gap:16px; align-items:flex-start;
@@ -175,6 +175,13 @@
     .maturity-controls { display:grid; grid-template-columns:minmax(0,1fr) 180px; gap:9px; margin:15px 0 12px; }
     .maturity-select { width:100%; color:var(--text); background:#101b30; border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:10px 12px; font-size:13px; }
     .maturity-status { display:flex; align-items:center; justify-content:space-between; gap:10px; color:#b9c9dc; font-size:11px; margin-bottom:10px; }
+    .matrix-value { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:12px 0 14px; }
+    .value-item { border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:10px; background:rgba(255,255,255,.035); }
+    .value-item strong { display:block; color:#eaf8ff; font-size:12px; }
+    .value-item span { display:block; color:#9fb2c8; font-size:10px; line-height:1.4; margin-top:4px; }
+    .maturity-legend { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px; margin-bottom:12px; }
+    .legend-step { border-top:3px solid var(--level-color); background:rgba(255,255,255,.035); border-radius:5px 5px 9px 9px; padding:7px 5px; text-align:center; color:#afc0d4; font-size:9px; }
+    .legend-step b { display:block; color:#f2f8ff; font-size:10px; margin-bottom:2px; }
     .maturity-list { display:grid; gap:10px; }
     .maturity-measure { border:1px solid rgba(255,255,255,.1); background:rgba(0,0,0,.13); border-radius:15px; overflow:hidden; }
     .maturity-measure summary { cursor:pointer; list-style:none; display:grid; grid-template-columns:64px minmax(0,1fr) auto; gap:10px; align-items:center; padding:12px; }
@@ -183,6 +190,9 @@
     .maturity-measure[open] summary:after { content:'−'; }
     .maturity-code { color:#96f2ff; font-weight:850; font-size:12px; }
     .maturity-name { color:#f5f8ff; font-weight:760; }
+    .measure-context { padding:0 12px 11px; display:grid; gap:7px; }
+    .measure-intent { color:#c8d7e8; font-size:11px; line-height:1.48; border-left:2px solid var(--accent); padding-left:9px; }
+    .measure-evidence { color:#cfc4f9; font-size:10px; line-height:1.4; }
     .level-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; padding:0 12px 12px; }
     .level-card { min-width:0; border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:10px; background:rgba(255,255,255,.04); }
     .level-card.active { border-color:rgba(103,232,249,.68); box-shadow:0 0 0 2px rgba(103,232,249,.08); }
@@ -241,8 +251,8 @@
       .pill-row { justify-content:flex-start; gap:6px; }
       .pill, .back-link { padding:6px 8px; font-size:10px; }
       main { grid-template-columns:minmax(0,1fr); padding:8px 8px 24px; gap:14px; }
-      .visual-card, .detail-card, .matrix-card, .maturity-card, .right-stack { min-width:0; width:100%; max-width:100%; }
-      .right-stack { gap:14px; }
+      .visual-card, .detail-card, .matrix-card, .maturity-card, .left-stack, .right-stack { min-width:0; width:100%; max-width:100%; }
+      .left-stack, .right-stack { gap:14px; }
       .visual-card { padding:10px; min-height:0; overflow:hidden; }
       .controls { gap:7px; }
       .controls > div { gap:6px!important; }
@@ -262,6 +272,8 @@
       .maturity-heading { display:block; }
       .maturity-heading .pill { display:inline-block; margin-top:9px; }
       .maturity-controls { grid-template-columns:1fr; }
+      .matrix-value { grid-template-columns:1fr; }
+      .maturity-legend { grid-template-columns:repeat(3,minmax(0,1fr)); }
       .maturity-measure summary { grid-template-columns:52px minmax(0,1fr) auto; padding:11px 9px; }
       .level-grid { grid-template-columns:1fr; padding:0 9px 9px; }
       .matrix-title { margin:0; }
@@ -295,6 +307,7 @@
   </header>
 
   <main>
+    <div class="left-stack">
     <section class="visual-card">
       <div class="controls">
         <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -317,9 +330,6 @@
       </div>
       <div class="hint">Drag sideways to rotate · scroll vertically as normal · click a wedge to explode it.</div>
     </section>
-
-    <div class="right-stack">
-      <section class="detail-card" id="detail"></section>
       <section class="maturity-card" id="maturityMatrix" aria-labelledby="maturityTitle">
         <div class="maturity-heading">
           <div><h2 id="maturityTitle">Full DQI maturity matrix</h2><p>Explore the evidence outcomes for every measure from Level 0 to Level 5. This view follows the dimension selected on the wheel.</p></div>
@@ -337,9 +347,19 @@
             <option value="5">Highlight Level 5 · Optimised</option>
           </select>
         </div>
+        <div class="matrix-value" aria-label="How to use the maturity matrix">
+          <div class="value-item"><strong>1 · Establish current state</strong><span>Choose the level whose evidence statement is fully demonstrable today.</span></div>
+          <div class="value-item"><strong>2 · Capture evidence</strong><span>Use the governance intent and references to identify policies, logs, owners and controls.</span></div>
+          <div class="value-item"><strong>3 · Plan improvement</strong><span>Read the next maturity level as a practical target state and remediation outcome.</span></div>
+        </div>
+        <div class="maturity-legend" id="maturityLegend" aria-label="Maturity level definitions"></div>
         <div class="maturity-status"><span id="maturityContext">Selected dimension</span><span>Click a measure to inspect its evidence ladder</span></div>
         <div class="maturity-list" id="maturityList"><div class="matrix-empty">Loading the DQI Standard matrix…</div></div>
       </section>
+    </div>
+
+    <div class="right-stack">
+      <section class="detail-card" id="detail"></section>
       <details class="matrix-card" id="standardsMap" open>
         <summary class="matrix-title"><h2>Standards coverage map</h2><span class="pill" id="coverageCount"></span></summary>
         <div class="std-grid" id="stdGrid"></div>
@@ -432,6 +452,7 @@ const maturityContext = document.getElementById('maturityContext');
 
 const MATURITY_LABELS = ['Absent','Initial','Developing','Defined','Managed','Optimised'];
 const MATURITY_COLORS = ['#ef4444','#f59e0b','#eab308','#22c55e','#3b82f6','#a855f7'];
+document.getElementById('maturityLegend').innerHTML = MATURITY_LABELS.map((label,level)=>`<div class="legend-step" style="--level-color:${MATURITY_COLORS[level]}"><b>Level ${level}</b>${label}</div>`).join('');
 
 async function loadMaturityMatrix() {
   try {
@@ -460,10 +481,14 @@ function renderMaturityMatrix() {
     maturityList.innerHTML = `<div class="matrix-empty">No measures match this search in ${domain.id}.</div>`;
     return;
   }
-  maturityList.innerHTML = rows.map((row,index)=>`<details class="maturity-measure"${index===0 ? ' open' : ''}>
+  maturityList.innerHTML = rows.map((row,index)=>{
+    const measure = domain.measures.find(item => item.id === row.id);
+    return `<details class="maturity-measure"${index===0 ? ' open' : ''}>
     <summary><span class="maturity-code">${row.id}</span><span class="maturity-name">${row.name}</span></summary>
+    <div class="measure-context"><div class="measure-intent"><strong>Governance intent:</strong> ${measure?.governs || 'Assess whether this control is consistently defined, evidenced and sustained.'}</div>${measure?.refs ? `<div class="measure-evidence"><strong>Evidence and normative references:</strong> ${measure.refs}</div>` : ''}</div>
     <div class="level-grid">${row.levels.map((copy,level)=>`<article class="level-card${highlightedLevel===String(level) ? ' active' : ''}"${highlightedLevel!=='all' && highlightedLevel!==String(level) ? ' style="opacity:.48"' : ''}><div class="level-label"><span class="level-dot" style="background:${MATURITY_COLORS[level]}"></span>Level ${level} · ${MATURITY_LABELS[level]}</div><div class="level-copy">${copy}</div></article>`).join('')}</div>
-  </details>`).join('');
+  </details>`;
+  }).join('');
 }
 
 if(!(window.CSS && CSS.supports && CSS.supports('transform-style','preserve-3d'))) {
