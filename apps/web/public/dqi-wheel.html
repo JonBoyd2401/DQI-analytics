@@ -18,7 +18,7 @@
       --shadow:0 24px 70px rgba(0,0,0,.45);
       --radius:22px;
       --rz:-6deg;
-      --tilt:58deg;
+      --tilt:50deg;
     }
     * { box-sizing:border-box; }
     .sr-only { position:absolute!important; width:1px!important; height:1px!important; padding:0!important; margin:-1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important; white-space:nowrap!important; border:0!important; }
@@ -313,7 +313,7 @@
       <details class="filter-panel" id="filterPanel" open><summary>Standards &amp; regulatory filters</summary><div class="controls" id="filters" aria-label="Standards filters"></div></details>
       <div class="scene" id="scene" aria-label="Interactive DQI explorer">
         <div class="wheel-stage" id="wheelStage">
-          <svg id="wheel" viewBox="-380 -390 760 780" role="img" aria-labelledby="wheelTitle">
+          <svg id="wheel" viewBox="-350 -360 700 720" role="img" aria-labelledby="wheelTitle">
             <title id="wheelTitle">Explore the twelve DQI dimensions</title>
             <defs id="defs"></defs>
             <g id="wheelTilt"></g>
@@ -649,7 +649,7 @@ function selectDomain(i) {
 function resetView() {
   selected = 0; explodedAll = false; activeStandard = 'All'; searchTerm=''; rotation=-6; tiltOn=true;
   document.documentElement.style.setProperty('--rz', rotation+'deg');
-  document.documentElement.style.setProperty('--tilt','58deg');
+  document.documentElement.style.setProperty('--tilt','50deg');
   document.getElementById('searchBox').value='';
   document.getElementById('matrixSearch').value='';
   document.getElementById('maturityLevel').value='all';
@@ -669,7 +669,7 @@ document.getElementById('resetBtn').addEventListener('click', resetView);
 tiltBtn.addEventListener('click', (e)=>{
   tiltOn = !tiltOn;
   e.currentTarget.classList.toggle('active', tiltOn);
-  document.documentElement.style.setProperty('--tilt', tiltOn ? '58deg' : '0deg');
+  document.documentElement.style.setProperty('--tilt', tiltOn ? '50deg' : '0deg');
 });
 document.getElementById('searchBox').addEventListener('input', e=>{
   searchTerm = e.target.value.trim(); drawWheel(); renderDetail();
