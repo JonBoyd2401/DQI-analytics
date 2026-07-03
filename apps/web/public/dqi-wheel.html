@@ -18,7 +18,7 @@
       --shadow:0 24px 70px rgba(0,0,0,.45);
       --radius:22px;
       --rz:-6deg;
-      --tilt:50deg;
+      --tilt:0deg;
     }
     * { box-sizing:border-box; }
     .sr-only { position:absolute!important; width:1px!important; height:1px!important; padding:0!important; margin:-1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important; white-space:nowrap!important; border:0!important; }
@@ -102,6 +102,7 @@
     .scene:active { cursor:grabbing; }
     .wheel-stage {
       width:min(108%, 720px); aspect-ratio:1/1; display:grid; place-items:center; overflow:visible;
+      position:relative; top:-44px;
       transform-origin:50% 50%;
       transform:rotateX(var(--tilt)) rotateZ(var(--rz)) translateZ(0);
       transform-style:preserve-3d;
@@ -256,7 +257,7 @@
       #filters { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
       #filters button { width:100%; min-width:0; white-space:normal; line-height:1.25; }
       .scene { height:420px; width:100%; overflow:hidden; }
-      .wheel-stage { width:min(96%, 340px); max-width:340px; }
+      .wheel-stage { width:min(96%, 340px); max-width:340px; top:-22px; }
       .hint { font-size:11px; line-height:1.35; padding:8px 9px; }
       .detail-head { padding:17px 15px 13px; }
       .detail-body { padding:14px 15px 17px; max-height:none; overflow:visible; }
@@ -306,7 +307,7 @@
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button id="explodeBtn" type="button">Explode all</button>
           <button id="resetBtn" type="button">Reset view</button>
-          <button id="tiltBtn" type="button" class="active">3D tilt</button>
+          <button id="tiltBtn" type="button">3D tilt</button>
         </div>
         <input id="searchBox" class="search" type="search" placeholder="Search dimensions or measures…" />
       </div>
@@ -426,7 +427,7 @@ let explodedAll = false;
 let activeStandard = 'All';
 let rotation = -6;
 let searchTerm = '';
-let tiltOn = true;
+let tiltOn = false;
 let maturityRows = [];
 let matrixSearchTerm = '';
 let highlightedLevel = 'all';
@@ -647,15 +648,15 @@ function selectDomain(i) {
   drawWheel(); renderDetail(); renderMaturityMatrix();
 }
 function resetView() {
-  selected = 0; explodedAll = false; activeStandard = 'All'; searchTerm=''; rotation=-6; tiltOn=true;
+  selected = 0; explodedAll = false; activeStandard = 'All'; searchTerm=''; rotation=-6; tiltOn=false;
   document.documentElement.style.setProperty('--rz', rotation+'deg');
-  document.documentElement.style.setProperty('--tilt','50deg');
+  document.documentElement.style.setProperty('--tilt','0deg');
   document.getElementById('searchBox').value='';
   document.getElementById('matrixSearch').value='';
   document.getElementById('maturityLevel').value='all';
   matrixSearchTerm=''; highlightedLevel='all';
   document.getElementById('explodeBtn').classList.remove('active');
-  tiltBtn.classList.add('active');
+  tiltBtn.classList.remove('active');
   renderFilters(); drawWheel(); renderDetail(); renderMaturityMatrix(); renderMatrix();
 }
 
