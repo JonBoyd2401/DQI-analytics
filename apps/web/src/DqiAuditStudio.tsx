@@ -194,7 +194,7 @@ export function DqiAuditStudio() {
       </nav>
       <section className="dqi-hero">
         <div>
-          <span className="kicker">QWEN PROPOSAL -&gt; GOVERNED SEMANTIC PLAN -&gt; AUDIT REPORT</span>
+          <span className="kicker">AI PROPOSAL -&gt; GOVERNED SEMANTIC PLAN -&gt; AUDIT REPORT</span>
           <h1>
             Ask the evidence.
             <br />
@@ -204,11 +204,8 @@ export function DqiAuditStudio() {
         </div>
         <div className="reg-card">
           <span>SEMANTIC ENGINE</span>
-          <strong>{engineStatus?.modelId ?? 'Qwen 3.6'}</strong>
-          <small>{engineStatus?.configured ? 'Live endpoint configured · output validated' : 'Deterministic fallback · Qwen endpoint not configured'}</small>
-          <a href="https://github.com/JonBoyd2401/Qwen3.6" target="_blank" rel="noreferrer">
-            Model fork -&gt;
-          </a>
+          <strong>{result?.semanticEngine.mode === 'ai-proposal-validated' ? result.semanticEngine.modelId : engineStatus?.modelId ?? 'AI not yet validated'}</strong>
+          <small>{result?.semanticEngine.mode === 'ai-proposal-validated' ? `${useCustomAi ? 'User model' : 'Configured model'} connection successful · semantic proposal validated` : engineStatus?.configured ? 'AI endpoint configured · generate a report to validate it' : 'Deterministic engine active · AI endpoint not configured'}</small>
         </div>
       </section>
       <section className="studio-workspace">
@@ -326,7 +323,7 @@ export function DqiAuditStudio() {
                 {loading ? 'Building widget…' : 'Use prompt & build →'}
               </button>
             </div>
-            <small>Calculations are governed formula presets. Qwen may interpret your wording, but only the deterministic engine performs the arithmetic.</small>
+            <small>AI may interpret your wording, but governed formula presets and the deterministic engine perform the arithmetic.</small>
           </details>
           <div className="prompt-examples">
             <span>Example prompts</span>
@@ -338,7 +335,7 @@ export function DqiAuditStudio() {
           </div>
           <details className="capability-browser">
             <summary>Explore everything you can ask</summary>
-            <p>Use your own wording. Qwen maps it to the closest governed metric, breakdown and filters.</p>
+            <p>Use your own wording. AI maps it to the closest governed metric, breakdown and filters.</p>
             <div>
               {capabilities.map((group) => (
                 <section key={group.title}>
@@ -385,7 +382,7 @@ export function DqiAuditStudio() {
         </div>
         <Catalogue title="Governance metrics" items={['Usage · Passed · Blocked · Review', 'Prompt injection · PII leakage · Retention breaches', 'Model drift · Grounding · Evidence completeness', 'Cost · Tokens · Latency · SLA breaches']} />
         <Catalogue title="Break down or filter" items={['System · Model · Vendor · Integration', 'Policy · Control · Regulation · Risk tier', 'Region · Business unit · User role', 'Environment · Decision · Data class']} />
-        <Catalogue title="Guardrails" items={['Qwen proposes semantic intent only', 'Deterministic compiler builds ES/OpenSearch DSL', 'Published catalogue identifiers only', '4, 12 or 26 complete weeks']} />
+        <Catalogue title="Guardrails" items={['AI proposes semantic intent only', 'Deterministic compiler builds ES/OpenSearch DSL', 'Published catalogue identifiers only', '4, 12 or 26 complete weeks']} />
       </section>
     </main>
   );
@@ -558,9 +555,9 @@ function AuditWidget({ result }: { result: WidgetGenerationResponse }) {
         ))}
       </div>
       <div className="interpretation">
-        <strong>Qwen semantic safety</strong>
+        <strong>AI semantic query</strong>
         <span>{semanticEngine.modelId}</span>
-        <span>{semanticEngine.mode}</span>
+        <span>{semanticEngine.mode === 'ai-proposal-validated' ? 'AI proposal validated' : 'Deterministic fallback'}</span>
         <span>{Math.round(semanticEngine.confidence * 100)}% confidence</span>
         {semanticEngine.safeguards.slice(0, 2).map((item) => (
           <span key={item}>{item}</span>

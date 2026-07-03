@@ -184,6 +184,6 @@ describe('natural-language DQI audit widgets', () => {
     expect(widget.metric.id).toBe('metric.model_drift_score');
     expect(widget.dimension.id).toBe('dimension.business_unit');
     expect(widget.filters).toEqual(expect.arrayContaining([{ field: 'vendor', operator: 'equals', value: 'Qwen' }]));
-    expect(widget.interpretation.join(' ')).toContain('Qwen rationale');
+    expect(widget.interpretation.join(' ')).toContain('AI rationale');
   });
 });

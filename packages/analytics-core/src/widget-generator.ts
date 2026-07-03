@@ -49,7 +49,7 @@ const qwenSemanticProposalSchema = z.object({
 
 export function qwenRuntimeStatus() {
   return {
-    provider: 'Qwen',
+    provider: 'OpenAI-compatible AI',
     configured: Boolean(process.env.QWEN_BASE_URL),
     modelId: process.env.QWEN_MODEL ?? 'JonBoyd2401/Qwen3.6',
     execution: process.env.QWEN_BASE_URL ? 'qwen-endpoint-configured' : 'deterministic-fallback'
@@ -148,10 +148,10 @@ export const semanticCatalogue = {
   metrics,
   dimensions,
   engine: {
-    modelId: 'JonBoyd2401/Qwen3.6',
-    mode: 'qwen-proposal-validated',
+    modelId: process.env.QWEN_MODEL ?? 'Provider not configured',
+    mode: process.env.QWEN_BASE_URL ? 'ai-endpoint-configured' : 'deterministic-fallback',
     safeguards: [
-      'Qwen proposals are treated as hints only',
+      'AI proposals are treated as hints only',
       'Only published semantic identifiers can be selected',
       'Elasticsearch/OpenSearch DSL is compiled deterministically',
       'Unsupported fields and executable query fragments are discarded'
@@ -412,8 +412,8 @@ export function interpretWidgetPrompt(raw: unknown, proposal?: QwenSemanticPropo
       `${dimension.label} breakdown`,
       `Last ${weeks} complete weeks`,
       ...filters.map((filter) => `${filter.field}: ${filter.value}`),
-      `Qwen proposal confidence: ${Math.round((proposal?.confidence ?? ((metricMatch.confidence + dimensionMatch.confidence) / 2)) * 100)}%`,
-      ...(proposal?.rationale ? [`Qwen rationale: ${proposal.rationale}`] : []),
+      `AI proposal confidence: ${Math.round((proposal?.confidence ?? ((metricMatch.confidence + dimensionMatch.confidence) / 2)) * 100)}%`,
+      ...(proposal?.rationale ? [`AI rationale: ${proposal.rationale}`] : []),
       'EU AI Act audit policy',
       `${visual.chartType} chart`,
       `${visual.palette} palette`,
@@ -467,7 +467,7 @@ function buildWidget(widget: GeneratedWidget, prompt: string, now: Date, proposa
       }
     },
     semanticEngine: {
-      mode: proposal ? 'qwen-proposal-validated' : 'deterministic-fallback',
+      mode: proposal ? 'ai-proposal-validated' : 'deterministic-fallback',
       modelId: proposalModelId ?? qwenRuntimeStatus().modelId,
       confidence: Math.max(0, Math.min(1, proposal?.confidence ?? 0.68)),
       validated: true,

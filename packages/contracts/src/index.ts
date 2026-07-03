@@ -174,7 +174,7 @@ export const widgetGenerationResponseSchema = z.object({
     elasticsearchDsl: z.record(z.unknown())
   }).strict(),
   semanticEngine: z.object({
-    mode: z.enum(['qwen-proposal-validated', 'deterministic-fallback']),
+    mode: z.enum(['ai-proposal-validated', 'deterministic-fallback']),
     modelId: z.string().min(1).max(200),
     confidence: z.number().min(0).max(1),
     validated: z.literal(true),
