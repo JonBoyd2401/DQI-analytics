@@ -61,6 +61,23 @@ export function qwenChatCompletionsUrl(rawBaseUrl: string): string {
   return `${baseUrl}${baseUrl.endsWith('/v1') ? '' : '/v1'}/chat/completions`;
 }
 
+async function providerResponseError(response: Response): Promise<Error> {
+  let detail = '';
+  try {
+    const payload = await response.json() as { error?: { message?: string } | string; message?: string };
+    detail = typeof payload.error === 'string' ? payload.error : payload.error?.message ?? payload.message ?? '';
+  } catch {
+    detail = '';
+  }
+  const normalized = detail.toLowerCase();
+  if (response.status === 401 || response.status === 403) return new Error('The AI provider rejected the credentials. Check the API key and confirm it can access this model.');
+  if (response.status === 402 || normalized.includes('credit') || normalized.includes('billing') || normalized.includes('insufficient_quota')) return new Error('The AI account has no available credits or quota. Add credits or choose another provider, then try again.');
+  if (response.status === 429) return new Error('The AI provider rate limit has been reached. Wait briefly, reduce usage, or check the account quota.');
+  if (response.status === 404) return new Error('The AI endpoint or model was not found. Check the endpoint URL and the exact model name exposed by your provider.');
+  if (response.status >= 500) return new Error('The AI provider is temporarily unavailable. Check its service status or try again later.');
+  return new Error(`The AI provider rejected the request (HTTP ${response.status}). ${detail || 'Check the endpoint, model name, and provider settings.'}`);
+}
+
 function validatedConnection(connection?: QwenConnection): QwenConnection | undefined {
   const resolved = connection ?? (process.env.QWEN_BASE_URL ? {
     baseUrl: process.env.QWEN_BASE_URL,
@@ -520,32 +537,41 @@ export async function requestQwenSemanticProposal(prompt: string, signal?: Abort
   };
   init.signal = signal ? AbortSignal.any([signal, AbortSignal.timeout(15_000)]) : AbortSignal.timeout(15_000);
   const response = await fetch(qwenChatCompletionsUrl(baseUrl), init);
-  if (!response.ok) throw new Error(`Qwen semantic mapper returned HTTP ${response.status}`);
+  if (!response.ok) throw await providerResponseError(response);
   const payload = await response.json() as { choices?: { message?: { content?: string } }[] };
   const content = payload.choices?.[0]?.message?.content;
-  return content ? parseQwenContent(content) : undefined;
+  if (!content) throw new Error('The AI provider returned no response content. Confirm that the endpoint supports OpenAI-compatible chat completions.');
+  const proposal = parseQwenContent(content);
+  if (!proposal) throw new Error('The AI model response could not be validated. Try a stronger instruction-following model or use deterministic mode.');
+  return proposal;
 }
 
 export async function generateWidgetWithQwen(raw: unknown, now = new Date('2026-07-01T10:00:00.000Z'), signal?: AbortSignal): Promise<WidgetGenerationResponse> {
-  const { prompt, aiConnection } = widgetPromptSchema.parse(raw);
+  const { prompt, aiMode, aiConnection } = widgetPromptSchema.parse(raw);
   let proposal: QwenSemanticProposal | undefined;
   try {
-    proposal = await requestQwenSemanticProposal(prompt, signal, aiConnection);
-  } catch {
+    proposal = aiMode === 'deterministic' ? undefined : await requestQwenSemanticProposal(prompt, signal, aiMode === 'custom' ? aiConnection : undefined);
+  } catch (error) {
+    if (aiMode === 'custom') throw error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')
+      ? new Error('The AI endpoint did not respond within 15 seconds. Check that it is running and reachable from DQI.')
+      : error instanceof TypeError ? new Error('DQI could not connect to the AI endpoint. Check the URL, HTTPS certificate, network access, and that the model server is running.') : error;
     proposal = undefined;
   }
   return buildWidget(interpretWidgetPrompt({ prompt }, proposal), prompt, now, proposal, aiConnection?.modelId);
 }
 
 export async function refineWidgetWithQwen(raw: unknown, now = new Date('2026-07-01T10:00:00.000Z'), signal?: AbortSignal): Promise<WidgetGenerationResponse> {
-  const { originalPrompt, editPrompt, aiConnection } = widgetRefinementRequestSchema.parse(raw);
+  const { originalPrompt, editPrompt, aiMode, aiConnection } = widgetRefinementRequestSchema.parse(raw);
   const instruction = '\nLatest follow-up instruction (this overrides earlier conflicting choices): ';
   const contextBudget = Math.max(0, 1000 - instruction.length - editPrompt.length);
   const prompt = `${originalPrompt.slice(-contextBudget)}${instruction}${editPrompt}`;
   let proposal: QwenSemanticProposal | undefined;
   try {
-    proposal = await requestQwenSemanticProposal(prompt, signal, aiConnection);
-  } catch {
+    proposal = aiMode === 'deterministic' ? undefined : await requestQwenSemanticProposal(prompt, signal, aiMode === 'custom' ? aiConnection : undefined);
+  } catch (error) {
+    if (aiMode === 'custom') throw error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError')
+      ? new Error('The AI endpoint did not respond within 15 seconds. Check that it is running and reachable from DQI.')
+      : error instanceof TypeError ? new Error('DQI could not connect to the AI endpoint. Check the URL, HTTPS certificate, network access, and that the model server is running.') : error;
     proposal = undefined;
   }
   const base = interpretWidgetPrompt({ prompt: originalPrompt.slice(0, 1000) });

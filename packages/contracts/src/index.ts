@@ -89,14 +89,16 @@ export const aiConnectionSchema = z.object({
 
 export const widgetPromptSchema = z.object({
   prompt: z.string().trim().min(10).max(1000),
+  aiMode: z.enum(['auto', 'deterministic', 'custom']).default('auto'),
   aiConnection: aiConnectionSchema.optional()
-}).strict();
+}).strict().refine((value) => value.aiMode !== 'custom' || Boolean(value.aiConnection), { message: 'A custom AI connection is required in custom mode', path: ['aiConnection'] });
 
 export const widgetRefinementRequestSchema = z.object({
   originalPrompt: z.string().trim().min(10).max(4000),
   editPrompt: z.string().trim().min(3).max(500),
+  aiMode: z.enum(['auto', 'deterministic', 'custom']).default('auto'),
   aiConnection: aiConnectionSchema.optional()
-}).strict();
+}).strict().refine((value) => value.aiMode !== 'custom' || Boolean(value.aiConnection), { message: 'A custom AI connection is required in custom mode', path: ['aiConnection'] });
 
 export const widgetVisualSchema = z.object({
   chartType: z.enum(['line', 'area', 'bar', 'horizontalBar', 'stackedBar', 'donut', 'kpi']),

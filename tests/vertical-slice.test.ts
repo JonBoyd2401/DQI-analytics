@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { compileQuery, dqiAuditModel, evaluate, explain, generateWidget, interpretWidgetPrompt, normalizeCompleteWeeks, planQuery, refineWidget, refineWidgetWithQwen, runAnalytics, SyntheticConnector, type Expression } from '@dqi/analytics-core';
+import { describe, expect, it, vi } from 'vitest';
+import { compileQuery, dqiAuditModel, evaluate, explain, generateWidget, generateWidgetWithQwen, interpretWidgetPrompt, normalizeCompleteWeeks, planQuery, refineWidget, refineWidgetWithQwen, runAnalytics, SyntheticConnector, type Expression } from '@dqi/analytics-core';
 
 const validRequest = { metricIds: ['metric.ai_requests'], dimensionIds: ['dimension.integration'], time: { fieldId: 'dimension.event_timestamp', range: 'last_12_complete_weeks', grain: 'week' }, visualisationHint: 'line' };
 const now = new Date('2026-07-01T10:00:00.000Z');
@@ -36,6 +36,16 @@ describe('safe calculation foundation', () => {
 });
 
 describe('natural-language DQI audit widgets', () => {
+  it('surfaces actionable provider errors for an explicitly configured model', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ error: { message: 'insufficient_quota' } }), { status: 429, headers: { 'content-type': 'application/json' } }));
+    await expect(generateWidgetWithQwen({
+      prompt: 'Show blocked events by policy for the last 12 weeks',
+      aiMode: 'custom',
+      aiConnection: { baseUrl: 'https://models.example.com/v1', apiKey: 'test-key', modelId: 'any-model' }
+    }, now)).rejects.toThrow(/credits or quota/i);
+    fetchMock.mockRestore();
+  });
+
   it('keeps conversational follow-ups within the governed prompt budget', async () => {
     const result = await refineWidgetWithQwen({
       originalPrompt: `Show AI requests by integration for 12 weeks. ${'Earlier report context. '.repeat(150)}`,

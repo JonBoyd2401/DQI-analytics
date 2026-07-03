@@ -77,6 +77,15 @@ function friendlyError(reason: unknown, fallback: string) {
   return reason instanceof Error && !reason.message.startsWith('[') ? reason.message : fallback;
 }
 
+async function apiError(response: Response, fallback: string): Promise<Error> {
+  try {
+    const payload = await response.json() as { message?: string };
+    return new Error(payload.message || fallback);
+  } catch {
+    return new Error(fallback);
+  }
+}
+
 export function DqiAuditStudio() {
   const [prompt, setPrompt] = useState(examples[0]!);
   const [result, setResult] = useState<WidgetGenerationResponse | null>(null);
@@ -119,9 +128,9 @@ export function DqiAuditStudio() {
       const response = await fetch('/api/v1/widgets/generate', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ prompt: requestPrompt, aiConnection }),
+        body: JSON.stringify({ prompt: requestPrompt, aiMode: useCustomAi ? 'custom' : 'auto', aiConnection }),
       });
-      if (!response.ok) throw new Error('Add a supported audit metric, dimension, and visual style to the prompt.');
+      if (!response.ok) throw await apiError(response, 'Add a supported audit metric, dimension, and visual style to the prompt.');
       setResult(widgetGenerationResponseSchema.parse(await response.json()));
       setOriginalPrompt(requestPrompt);
       setPrompt('');
@@ -142,10 +151,11 @@ export function DqiAuditStudio() {
         body: JSON.stringify({
           originalPrompt,
           editPrompt: editInstruction,
+          aiMode: useCustomAi ? 'custom' : 'auto',
           aiConnection,
         }),
       });
-      if (!response.ok) throw new Error('Try naming what to change: metric, breakdown, filter, timeframe, or chart style. Your existing report will supply the rest.');
+      if (!response.ok) throw await apiError(response, 'Try naming what to change: metric, breakdown, filter, timeframe, or chart style. Your existing report will supply the rest.');
       const refined = widgetGenerationResponseSchema.parse(await response.json());
       setResult(refined);
       setOriginalPrompt(refined.query.naturalLanguage);
