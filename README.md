@@ -27,12 +27,15 @@ The widget API can use Qwen as a probabilistic semantic mapper before determinis
 Set these optional environment variables locally or in Render:
 
 ```bash
-QWEN_BASE_URL=https://your-qwen-openai-compatible-endpoint
-QWEN_API_KEY=optional-token
-QWEN_MODEL=JonBoyd2401/Qwen3.6
+QWEN_BASE_URL=https://YOUR_WORKSPACE_ID.eu-central-1.maas.aliyuncs.com/compatible-mode/v1
+QWEN_API_KEY=your-model-studio-api-key
+QWEN_MODEL=qwen3.6-flash
 ```
 
-If `QWEN_BASE_URL` is not set or the model call fails, the app falls back to the deterministic synonym matcher so the demo remains runnable.
+The URL above is the Alibaba Model Studio Frankfurt workspace pattern; replace `YOUR_WORKSPACE_ID` and keep the API key private. Base URLs with or without a trailing `/v1` are supported. If `QWEN_BASE_URL` is not set, the response is invalid, or the model call fails, the app falls back to the deterministic synonym matcher so the demo remains runnable. Each generated report discloses whether a validated Qwen proposal was actually used.
+
+Users can also open **AI connection** in the report composer and supply any OpenAI-compatible endpoint, model name, and optional key for the current browser session. This supports local Ollama, LM Studio, or vLLM endpoints when DQI runs on the same machine. The hosted Render demo accepts HTTPS endpoints only; it cannot reach a visitor's laptop-local `localhost`. User-supplied credentials are not persisted or returned in API responses.
+
 ## Deploy the demo to Render
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/JonBoyd2401/DQI-analytics)

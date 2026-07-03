@@ -81,13 +81,21 @@ export interface AIProvider {
   proposeSemanticRequest(input: string, signal?: AbortSignal): Promise<unknown>;
 }
 
+export const aiConnectionSchema = z.object({
+  baseUrl: z.string().url().max(500),
+  apiKey: z.string().max(1000).optional(),
+  modelId: z.string().trim().min(1).max(200)
+}).strict();
+
 export const widgetPromptSchema = z.object({
-  prompt: z.string().trim().min(10).max(1000)
+  prompt: z.string().trim().min(10).max(1000),
+  aiConnection: aiConnectionSchema.optional()
 }).strict();
 
 export const widgetRefinementRequestSchema = z.object({
   originalPrompt: z.string().trim().min(10).max(4000),
-  editPrompt: z.string().trim().min(3).max(500)
+  editPrompt: z.string().trim().min(3).max(500),
+  aiConnection: aiConnectionSchema.optional()
 }).strict();
 
 export const widgetVisualSchema = z.object({
@@ -165,7 +173,7 @@ export const widgetGenerationResponseSchema = z.object({
   }).strict(),
   semanticEngine: z.object({
     mode: z.enum(['qwen-proposal-validated', 'deterministic-fallback']),
-    modelId: z.literal('JonBoyd2401/Qwen3.6'),
+    modelId: z.string().min(1).max(200),
     confidence: z.number().min(0).max(1),
     validated: z.literal(true),
     safeguards: z.array(z.string())

@@ -7,6 +7,7 @@ import {
   type GeneratedWidget,
   type WidgetGenerationResponse
 } from '@dqi/contracts';
+import { z } from 'zod';
 import { dqiDemoCatalogue, SyntheticDqiAuditDatabase, type DemoAggregateRow } from './demo-database.js';
 
 type MetricId = GeneratedWidget['metric']['id'];
@@ -16,15 +17,64 @@ type Intent = WidgetGenerationResponse['query']['semanticPlan']['intent'];
 type MetricDefinition = { label: string; format: GeneratedWidget['metric']['format']; aliases: string[]; calculation: string; lowerIsBetter?: boolean };
 type DimensionDefinition = { label: string; aliases: string[]; field?: keyof DemoAggregateRow };
 export type QwenSemanticProposal = {
-  metricId?: string;
-  dimensionId?: string;
-  intent?: string;
-  timeRangeWeeks?: number;
-  filters?: { field: string; value: string }[];
-  visual?: Partial<GeneratedWidget['visual']>;
-  confidence?: number;
-  rationale?: string;
+  metricId?: string | undefined;
+  dimensionId?: string | undefined;
+  intent?: string | undefined;
+  timeRangeWeeks?: number | undefined;
+  filters?: { field: string; value: string }[] | undefined;
+  visual?: {
+    chartType?: GeneratedWidget['visual']['chartType'] | undefined;
+    palette?: GeneratedWidget['visual']['palette'] | undefined;
+    theme?: GeneratedWidget['visual']['theme'] | undefined;
+  } | undefined;
+  confidence?: number | undefined;
+  rationale?: string | undefined;
 };
+export type QwenConnection = { baseUrl: string; apiKey?: string | undefined; modelId: string };
+
+const qwenSemanticProposalSchema = z.object({
+  metricId: z.string().min(1).optional(),
+  dimensionId: z.string().min(1).optional(),
+  intent: z.enum(['trend', 'breakdown', 'comparison', 'top_n', 'exception_review', 'coverage_report']).optional(),
+  timeRangeWeeks: z.union([z.literal(4), z.literal(12), z.literal(26)]).optional(),
+  filters: z.array(z.object({ field: z.string().min(1), value: z.string().min(1) }).strict()).max(12).optional(),
+  visual: z.object({
+    chartType: z.enum(['line', 'area', 'bar', 'horizontalBar', 'stackedBar', 'donut', 'kpi']).optional(),
+    palette: z.enum(['aurora', 'ocean', 'sunset', 'mono']).optional(),
+    theme: z.enum(['dark', 'light']).optional()
+  }).strict().optional(),
+  confidence: z.number().min(0).max(1).optional(),
+  rationale: z.string().max(500).optional()
+}).strict();
+
+export function qwenRuntimeStatus() {
+  return {
+    provider: 'Qwen',
+    configured: Boolean(process.env.QWEN_BASE_URL),
+    modelId: process.env.QWEN_MODEL ?? 'JonBoyd2401/Qwen3.6',
+    execution: process.env.QWEN_BASE_URL ? 'qwen-endpoint-configured' : 'deterministic-fallback'
+  } as const;
+}
+
+export function qwenChatCompletionsUrl(rawBaseUrl: string): string {
+  const baseUrl = rawBaseUrl.replace(/\/+$/, '');
+  return `${baseUrl}${baseUrl.endsWith('/v1') ? '' : '/v1'}/chat/completions`;
+}
+
+function validatedConnection(connection?: QwenConnection): QwenConnection | undefined {
+  const resolved = connection ?? (process.env.QWEN_BASE_URL ? {
+    baseUrl: process.env.QWEN_BASE_URL,
+    apiKey: process.env.QWEN_API_KEY,
+    modelId: process.env.QWEN_MODEL ?? 'JonBoyd2401/Qwen3.6'
+  } : undefined);
+  if (!resolved) return undefined;
+  const url = new URL(resolved.baseUrl);
+  const localHost = ['localhost', '127.0.0.1', '::1'].includes(url.hostname);
+  if (url.protocol !== 'https:' && !(process.env.NODE_ENV !== 'production' && url.protocol === 'http:' && localHost)) {
+    throw new Error('AI endpoint must use HTTPS. HTTP localhost endpoints are allowed only when DQI runs locally.');
+  }
+  return resolved;
+}
 
 const metrics: Record<MetricId, MetricDefinition> = {
   'metric.ai_requests': { label: 'AI usage events', format: 'integer', aliases: ['total ai usage events', 'ai usage events', 'ai usage', 'ai requests', 'requests', 'usage', 'interactions', 'activity volume'], calculation: 'SUM(ai_requests)' },
@@ -356,7 +406,7 @@ export function interpretWidgetPrompt(raw: unknown, proposal?: QwenSemanticPropo
   });
 }
 
-function buildWidget(widget: GeneratedWidget, prompt: string, now: Date, proposal?: QwenSemanticProposal): WidgetGenerationResponse {
+function buildWidget(widget: GeneratedWidget, prompt: string, now: Date, proposal?: QwenSemanticProposal, proposalModelId?: string): WidgetGenerationResponse {
   const database = new SyntheticDqiAuditDatabase(now);
   const periods = [...new Set(database.rows.map((row) => row.week))].slice(-widget.timeRangeWeeks);
   const field = dimensions[widget.dimension.id].field;
@@ -401,7 +451,7 @@ function buildWidget(widget: GeneratedWidget, prompt: string, now: Date, proposa
     },
     semanticEngine: {
       mode: proposal ? 'qwen-proposal-validated' : 'deterministic-fallback',
-      modelId: 'JonBoyd2401/Qwen3.6',
+      modelId: proposalModelId ?? qwenRuntimeStatus().modelId,
       confidence: Math.max(0, Math.min(1, proposal?.confidence ?? 0.68)),
       validated: true,
       safeguards: semanticCatalogue.engine.safeguards
@@ -441,17 +491,18 @@ function qwenSystemPrompt(): string {
 function parseQwenContent(content: string): QwenSemanticProposal | undefined {
   const cleaned = content.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
   try {
-    const parsed = JSON.parse(cleaned);
-    return parsed && typeof parsed === 'object' ? parsed as QwenSemanticProposal : undefined;
+    const parsed = qwenSemanticProposalSchema.safeParse(JSON.parse(cleaned));
+    return parsed.success ? parsed.data : undefined;
   } catch {
     return undefined;
   }
 }
 
-export async function requestQwenSemanticProposal(prompt: string, signal?: AbortSignal): Promise<QwenSemanticProposal | undefined> {
-  const baseUrl = process.env.QWEN_BASE_URL?.replace(/\/+$/, '');
-  if (!baseUrl) return undefined;
-  const apiKey = process.env.QWEN_API_KEY;
+export async function requestQwenSemanticProposal(prompt: string, signal?: AbortSignal, connection?: QwenConnection): Promise<QwenSemanticProposal | undefined> {
+  const provider = validatedConnection(connection);
+  if (!provider) return undefined;
+  const baseUrl = provider.baseUrl.replace(/\/+$/, '');
+  const apiKey = provider.apiKey;
   const init: RequestInit = {
     method: 'POST',
     headers: {
@@ -459,7 +510,7 @@ export async function requestQwenSemanticProposal(prompt: string, signal?: Abort
       ...(apiKey ? { authorization: `Bearer ${apiKey}` } : {})
     },
     body: JSON.stringify({
-      model: process.env.QWEN_MODEL ?? 'JonBoyd2401/Qwen3.6',
+      model: provider.modelId,
       temperature: 0.1,
       messages: [
         { role: 'system', content: qwenSystemPrompt() },
@@ -467,8 +518,8 @@ export async function requestQwenSemanticProposal(prompt: string, signal?: Abort
       ]
     })
   };
-  if (signal) init.signal = signal;
-  const response = await fetch(`${baseUrl}/v1/chat/completions`, init);
+  init.signal = signal ? AbortSignal.any([signal, AbortSignal.timeout(15_000)]) : AbortSignal.timeout(15_000);
+  const response = await fetch(qwenChatCompletionsUrl(baseUrl), init);
   if (!response.ok) throw new Error(`Qwen semantic mapper returned HTTP ${response.status}`);
   const payload = await response.json() as { choices?: { message?: { content?: string } }[] };
   const content = payload.choices?.[0]?.message?.content;
@@ -476,24 +527,24 @@ export async function requestQwenSemanticProposal(prompt: string, signal?: Abort
 }
 
 export async function generateWidgetWithQwen(raw: unknown, now = new Date('2026-07-01T10:00:00.000Z'), signal?: AbortSignal): Promise<WidgetGenerationResponse> {
-  const { prompt } = widgetPromptSchema.parse(raw);
+  const { prompt, aiConnection } = widgetPromptSchema.parse(raw);
   let proposal: QwenSemanticProposal | undefined;
   try {
-    proposal = await requestQwenSemanticProposal(prompt, signal);
+    proposal = await requestQwenSemanticProposal(prompt, signal, aiConnection);
   } catch {
     proposal = undefined;
   }
-  return buildWidget(interpretWidgetPrompt(raw, proposal), prompt, now, proposal);
+  return buildWidget(interpretWidgetPrompt({ prompt }, proposal), prompt, now, proposal, aiConnection?.modelId);
 }
 
 export async function refineWidgetWithQwen(raw: unknown, now = new Date('2026-07-01T10:00:00.000Z'), signal?: AbortSignal): Promise<WidgetGenerationResponse> {
-  const { originalPrompt, editPrompt } = widgetRefinementRequestSchema.parse(raw);
+  const { originalPrompt, editPrompt, aiConnection } = widgetRefinementRequestSchema.parse(raw);
   const instruction = '\nLatest follow-up instruction (this overrides earlier conflicting choices): ';
   const contextBudget = Math.max(0, 1000 - instruction.length - editPrompt.length);
   const prompt = `${originalPrompt.slice(-contextBudget)}${instruction}${editPrompt}`;
   let proposal: QwenSemanticProposal | undefined;
   try {
-    proposal = await requestQwenSemanticProposal(prompt, signal);
+    proposal = await requestQwenSemanticProposal(prompt, signal, aiConnection);
   } catch {
     proposal = undefined;
   }
@@ -528,7 +579,7 @@ export async function refineWidgetWithQwen(raw: unknown, now = new Date('2026-07
     visual,
     interpretation: [`Latest edit: ${editPrompt}`, metric.label, `${dimension.label} breakdown`, `Last ${weeks} complete weeks`, `${visual.chartType} chart`, `${visual.palette} palette`]
   });
-  return buildWidget(edited, prompt, now, proposal);
+  return buildWidget(edited, prompt, now, proposal, aiConnection?.modelId);
 }
 
 export function refineWidget(raw: unknown, now = new Date('2026-07-01T10:00:00.000Z')): WidgetGenerationResponse {

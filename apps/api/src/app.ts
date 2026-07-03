@@ -1,11 +1,11 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
-import { dqiAuditModel, dqiDemoCatalogue, generateWidgetWithQwen, refineWidgetWithQwen, runAnalytics, semanticCatalogue, SyntheticConnector } from '@dqi/analytics-core';
+import { dqiAuditModel, dqiDemoCatalogue, generateWidgetWithQwen, qwenRuntimeStatus, refineWidgetWithQwen, runAnalytics, semanticCatalogue, SyntheticConnector } from '@dqi/analytics-core';
 
 export function buildApp() {
   const app = Fastify({ logger: true, bodyLimit: 32_768 });
   void app.register(cors, { origin: /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/ });
-  app.get('/health', async () => ({ status: 'ok', aiRequired: false }));
+  app.get('/health', async () => ({ status: 'ok', aiRequired: false, semanticEngine: qwenRuntimeStatus() }));
   app.get('/api/v1/semantic-model', async () => dqiAuditModel);
   app.get('/api/v1/demo/catalogue', async () => ({
     semanticEngine: semanticCatalogue.engine,
