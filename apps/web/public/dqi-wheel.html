@@ -141,7 +141,7 @@
     .domain-kicker { color:#9eeaff; font-weight:850; letter-spacing:.1em; font-size:12px; text-transform:uppercase; }
     .domain-title { margin:5px 0 0; font-size:clamp(24px, 2.2vw, 34px); line-height:1.05; letter-spacing:-.035em; }
     .score-chip {
-      min-width:90px; text-align:center; padding:10px 12px; border-radius:16px; background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.12);
+      min-width:112px; text-align:center; padding:10px 12px; border-radius:16px; background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.12);
     }
     .score-chip strong { display:block; font-size:21px; }
     .score-chip span { color:var(--muted); font-size:11px; }
@@ -151,6 +151,8 @@
     .impact {
       border-left:3px solid var(--accent); padding:12px 14px; border-radius:12px; background:rgba(103,232,249,.07); color:#eafcff; line-height:1.45;
     }
+    .weight-explainer { margin:12px 0; padding:12px 14px; border:1px solid rgba(167,139,250,.3); border-radius:12px; background:rgba(167,139,250,.08); color:#d8e4f4; font-size:12px; line-height:1.5; }
+    .weight-explainer strong { color:#e9ddff; }
     .chips { display:flex; flex-wrap:wrap; gap:8px; }
     .chip {
       display:inline-flex; align-items:center; gap:6px; padding:7px 9px; border-radius:999px;
@@ -616,11 +618,12 @@ function renderDetail() {
   detail.innerHTML = `
     <div class="detail-head">
       <div><div class="domain-kicker">${d.id} · Dimension</div><h2 class="domain-title">${d.name}</h2></div>
-      <div class="score-chip"><strong>${d.weighting}</strong><span>${d.measureCount} measures</span></div>
+      <div class="score-chip" title="Each of DQI's 12 dimensions contributes equally to the overall assessment"><strong>${d.weighting}</strong><span>framework weighting</span></div>
     </div>
     <div class="detail-body">
       <p class="copy">${d.purpose}</p>
-      <div class="impact"><strong>Exploded view:</strong> ${d.impact}</div>
+      <div class="weight-explainer"><strong>What does ${d.weighting} mean?</strong> DQI weights each of its 12 dimensions equally: 100% ÷ 12. Equal weighting prevents strength in one area from masking a material weakness elsewhere and keeps the assessment balanced across business value, data quality, AI, governance, security and sustainability.</div>
+      <div class="impact"><strong>Why ${d.name} matters:</strong> ${d.impact}</div>
       <div class="section-title">Standards and regulatory mapping</div>
       <div class="chips">${standardChips}</div>
       <p class="copy" style="margin-top:10px">${d.regulatoryContext}</p>
