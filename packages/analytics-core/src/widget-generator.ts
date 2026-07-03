@@ -73,7 +73,7 @@ async function providerResponseError(response: Response): Promise<Error> {
   if (response.status === 401 || response.status === 403) return new Error('The AI provider rejected the credentials. Check the API key and confirm it can access this model.');
   if (response.status === 402 || normalized.includes('credit') || normalized.includes('billing') || normalized.includes('insufficient_quota')) return new Error('The AI account has no available credits or quota. Add credits or choose another provider, then try again.');
   if (response.status === 429) return new Error('The AI provider rate limit has been reached. Wait briefly, reduce usage, or check the account quota.');
-  if (response.status === 404) return new Error('The AI endpoint or model was not found. Check the endpoint URL and the exact model name exposed by your provider.');
+  if (response.status === 404 || (normalized.includes('model') && (normalized.includes('invalid') || normalized.includes('not found') || normalized.includes('does not exist') || normalized.includes('not exist')))) return new Error('The value in Model name is not available from this provider. Enter the exact model name exposed by the provider, including punctuation and letter case.');
   if (response.status >= 500) return new Error('The AI provider is temporarily unavailable. Check its service status or try again later.');
   return new Error(`The AI provider rejected the request (HTTP ${response.status}). ${detail || 'Check the endpoint, model name, and provider settings.'}`);
 }

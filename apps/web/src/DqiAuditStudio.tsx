@@ -95,7 +95,7 @@ export function DqiAuditStudio() {
   const [engineStatus, setEngineStatus] = useState<SemanticEngineStatus | null>(null);
   const [useCustomAi, setUseCustomAi] = useState(false);
   const [aiBaseUrl, setAiBaseUrl] = useState('http://localhost:11434/v1');
-  const [aiModelId, setAiModelId] = useState('qwen3.6');
+  const [aiModelId, setAiModelId] = useState('');
   const [aiApiKey, setAiApiKey] = useState('');
   const [guidedMetric, setGuidedMetric] = useState(guidedMetrics[0]!);
   const [guidedDimension, setGuidedDimension] = useState(guidedDimensions[1]!);
@@ -250,13 +250,13 @@ export function DqiAuditStudio() {
                   </label>
                   <label>
                     Model name
-                    <input value={aiModelId} onChange={(event) => setAiModelId(event.target.value)} placeholder="qwen3.6" />
+                    <input value={aiModelId} onChange={(event) => setAiModelId(event.target.value)} placeholder="Exact provider model name" />
                   </label>
                   <label>
                     API key (optional)
                     <input type="password" autoComplete="off" value={aiApiKey} onChange={(event) => setAiApiKey(event.target.value)} placeholder="Kept in this browser tab only" />
                   </label>
-                  <small>Local HTTP works when DQI runs locally. The hosted demo requires HTTPS. Credentials are not stored.</small>
+                  <small>The Model name value is sent directly as the provider's OpenAI-compatible <code>model</code> field. Local HTTP works when DQI runs locally. The hosted demo requires HTTPS. Credentials are not stored.</small>
                 </div>
               )}
             </details>

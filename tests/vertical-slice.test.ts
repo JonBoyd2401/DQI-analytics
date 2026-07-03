@@ -46,6 +46,16 @@ describe('natural-language DQI audit widgets', () => {
     fetchMock.mockRestore();
   });
 
+  it('explains invalid provider model identifiers', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ error: { message: 'Invalid model ID' } }), { status: 400, headers: { 'content-type': 'application/json' } }));
+    await expect(generateWidgetWithQwen({
+      prompt: 'Show blocked events by policy for the last 12 weeks',
+      aiMode: 'custom',
+      aiConnection: { baseUrl: 'https://models.example.com/v1', modelId: 'display-name' }
+    }, now)).rejects.toThrow(/value in Model name/i);
+    fetchMock.mockRestore();
+  });
+
   it('keeps conversational follow-ups within the governed prompt budget', async () => {
     const result = await refineWidgetWithQwen({
       originalPrompt: `Show AI requests by integration for 12 weeks. ${'Earlier report context. '.repeat(150)}`,
