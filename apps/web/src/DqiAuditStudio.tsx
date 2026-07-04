@@ -3,8 +3,20 @@ import ReactECharts from 'echarts-for-react';
 import { widgetGenerationResponseSchema, type WidgetGenerationResponse } from '@dqi/contracts';
 
 const examples = ['Show the top EU AI Act control findings by control for the last 12 weeks as a sunset bar chart', 'Compare blocked vs passed AI usage by decision in production over the past 12 weeks as a smooth ocean area chart', 'Trend model drift score for Qwen 3.6 by business unit over the last 26 weeks with a dark line chart', 'Show audit coverage and evidence completeness for EU AI Act by regulation in the EU region as a light KPI', 'Which DQI Enforce policy picked up prompt injection attempts in production for Qwen 3.6?', 'Show estimated model cost by vendor for confidential data over 12 weeks as ranked horizontal bars', 'Rank unresolved EU AI Act findings by business unit and severity using sunset columns', 'Trend hallucination rate by model in production over 26 weeks as a smooth area chart', 'Show human override rate by user role for high-risk systems as a donut chart', 'Compare assessment pass rate by regulation in the EU region as horizontal bars', 'Which integrations have the highest SLA breach rate for restricted data?', 'Show evidence completeness by DQI system as a light ocean KPI', 'Trend token cost by model vendor for production over the last 12 weeks'];
+examples.push(
+  'Where are our biggest audit trail gaps across live systems this quarter?',
+  'Which models have the highest cost per request for confidential data?',
+  'How often do AI events need a human review, split by business team?',
+  'Compare grounding success between model providers in production',
+  'Rank applications by assessment failure rate for high-risk AI',
+  'Is prompt injection getting worse over time in Europe?',
+  'Show average tokens per interaction by model as horizontal blue bars',
+  'What proportion of findings are still open by regulatory framework?',
+  'Which user roles generate the most AI activity per person?',
+  'Give me a single KPI for privacy leak rate in live customer-facing systems'
+);
 
-const guidedMetrics = ['AI requests', 'Passed events', 'Pass rate', 'Blocked events', 'Blocked rate', 'Events requiring review', 'DQI Enforce policy hits', 'Policy violation rate', 'Assessment pass rate', 'High-risk events', 'High-risk usage rate', 'Ungrounded response rate', 'Integration error rate', 'Prompt injection attempts', 'PII exposure attempts', 'Total tokens', 'Estimated cost', 'Average latency', 'P95 latency', 'Unique users', 'Human overrides', 'Override rate', 'Audit coverage', 'Evidence completeness', 'Model drift score', 'Exception approvals', 'Unresolved findings', 'Retention breaches', 'SLA breach rate'];
+const guidedMetrics = ['AI requests', 'Passed events', 'Pass rate', 'Blocked events', 'Blocked rate', 'Events requiring review', 'Human review rate', 'DQI Enforce policy hits', 'Policy violation rate', 'Assessment pass rate', 'Assessment failure rate', 'High-risk events', 'High-risk usage rate', 'Grounded response rate', 'Ungrounded response rate', 'Integration errors', 'Integration error rate', 'Prompt injection attempts', 'Prompt injection rate', 'PII exposure attempts', 'PII exposure rate', 'Total tokens', 'Average tokens per event', 'Estimated cost', 'Cost per event', 'Average latency', 'P95 latency', 'Unique users', 'AI events per user', 'Human overrides', 'Override rate', 'Audit coverage', 'Evidence completeness', 'Missing evidence rate', 'Model drift score', 'Exception approvals', 'Unresolved findings', 'Unresolved finding rate', 'Retention breaches', 'SLA breaches', 'SLA breach rate'];
 const guidedDimensions = ['Overall', 'Integration', 'Model', 'Model vendor', 'Environment', 'DQI Enforce policy', 'Decision', 'Severity', 'Risk tier', 'Region', 'Business unit', 'User role', 'Data class', 'Regulation', 'Control', 'DQI system'];
 const guidedCalculations = [
   { label: 'Simple value', phrase: '' },
@@ -22,19 +34,19 @@ const chatSuggestions = ['By policy instead', 'EU and Production only', 'Make th
 const capabilities = [
   {
     title: 'Usage and decisions',
-    items: ['AI usage events', 'Passed events and pass rate', 'Blocked events and blocked rate', 'Events requiring human review', 'Unique users', 'Human overrides and override rate'],
+    items: ['AI usage events', 'Passed events and pass rate', 'Blocked events and blocked rate', 'Human review volume and rate', 'Unique users and activity per user', 'Human overrides and override rate'],
   },
   {
     title: 'Safety and policy',
-    items: ['DQI Enforce policy hits', 'Prompt injection and jailbreak attempts', 'PII and privacy exposure attempts', 'High-risk events and usage rate', 'Toxicity, model allowlist and grounding controls', 'Retention and cross-border controls'],
+    items: ['DQI Enforce policy hits', 'Prompt injection volume and rate', 'PII exposure volume and rate', 'High-risk events and usage rate', 'Grounded and ungrounded response rates', 'Retention and cross-border controls'],
   },
   {
     title: 'Audit and compliance',
-    items: ['EU AI Act control findings', 'Assessment pass rate', 'Audit coverage', 'Evidence completeness', 'Exception approvals', 'Open and unresolved findings'],
+    items: ['EU AI Act control findings', 'Assessment pass and failure rates', 'Audit coverage', 'Evidence completeness and gaps', 'Exception approvals', 'Open findings and backlog rate'],
   },
   {
     title: 'Model and operations',
-    items: ['Model drift score', 'Ungrounded or hallucinated response rate', 'Integration error rate', 'Tokens and estimated cost', 'Average and P95 latency', 'SLA breach rate'],
+    items: ['Model drift score', 'Integration errors and error rate', 'Total and average token usage', 'Total cost and cost per event', 'Average and P95 latency', 'SLA breaches and breach rate'],
   },
   {
     title: 'Breakdowns',
@@ -66,7 +78,8 @@ function formatted(value: number, format: WidgetGenerationResponse['widget']['me
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency: 'GBP',
-      maximumFractionDigits: 0,
+      minimumFractionDigits: Math.abs(value) < 1 ? 4 : 0,
+      maximumFractionDigits: Math.abs(value) < 1 ? 4 : 0,
     }).format(value);
   if (format === 'duration') return `${Math.round(value)}ms`;
   return Math.round(value).toLocaleString('en-GB');
@@ -523,7 +536,7 @@ function AuditWidget({ result }: { result: WidgetGenerationResponse }) {
       })),
     };
   }, [colors, light, series, widget]);
-  const lowerIsBetter = ['metric.blocked_events', 'metric.blocked_rate', 'metric.reviewed_events', 'metric.policy_violation_rate', 'metric.high_risk_events', 'metric.high_risk_usage_rate', 'metric.ungrounded_response_rate', 'metric.integration_error_rate', 'metric.prompt_injection_attempts', 'metric.pii_exposure_attempts', 'metric.estimated_cost', 'metric.avg_latency_ms', 'metric.p95_latency_ms', 'metric.human_overrides', 'metric.override_rate', 'metric.model_drift_score', 'metric.exception_approvals', 'metric.unresolved_findings', 'metric.retention_breaches', 'metric.sla_breach_rate'].includes(widget.metric.id);
+  const lowerIsBetter = ['metric.blocked_events', 'metric.blocked_rate', 'metric.reviewed_events', 'metric.review_rate', 'metric.policy_violation_rate', 'metric.assessment_failure_rate', 'metric.high_risk_events', 'metric.high_risk_usage_rate', 'metric.ungrounded_response_rate', 'metric.integration_errors', 'metric.integration_error_rate', 'metric.prompt_injection_attempts', 'metric.prompt_injection_rate', 'metric.pii_exposure_attempts', 'metric.pii_exposure_rate', 'metric.average_tokens_per_event', 'metric.estimated_cost', 'metric.cost_per_event', 'metric.avg_latency_ms', 'metric.p95_latency_ms', 'metric.human_overrides', 'metric.override_rate', 'metric.evidence_gap_rate', 'metric.model_drift_score', 'metric.exception_approvals', 'metric.unresolved_findings', 'metric.unresolved_finding_rate', 'metric.retention_breaches', 'metric.sla_breaches', 'metric.sla_breach_rate'].includes(widget.metric.id);
   const favourable = lowerIsBetter ? summary.direction === 'down' : summary.direction === 'up';
   return (
     <section className={`audit-widget ${light ? 'audit-widget-light' : ''}`}>

@@ -126,7 +126,10 @@ export const generatedWidgetSchema = z.object({
       'metric.high_risk_usage_rate', 'metric.ungrounded_response_rate', 'metric.integration_error_rate', 'metric.prompt_injection_attempts',
       'metric.pii_exposure_attempts', 'metric.total_tokens', 'metric.estimated_cost', 'metric.avg_latency_ms', 'metric.p95_latency_ms',
       'metric.unique_users', 'metric.human_overrides', 'metric.override_rate', 'metric.audit_coverage_rate', 'metric.evidence_completeness_rate',
-      'metric.model_drift_score', 'metric.exception_approvals', 'metric.unresolved_findings', 'metric.retention_breaches', 'metric.sla_breach_rate'
+      'metric.model_drift_score', 'metric.exception_approvals', 'metric.unresolved_findings', 'metric.retention_breaches', 'metric.sla_breach_rate',
+      'metric.review_rate', 'metric.assessment_failure_rate', 'metric.grounded_response_rate', 'metric.integration_errors',
+      'metric.prompt_injection_rate', 'metric.pii_exposure_rate', 'metric.average_tokens_per_event', 'metric.cost_per_event',
+      'metric.evidence_gap_rate', 'metric.unresolved_finding_rate', 'metric.sla_breaches', 'metric.events_per_user'
     ]),
     label: z.string(),
     format: z.enum(['integer', 'duration', 'percentage', 'score', 'currency'])

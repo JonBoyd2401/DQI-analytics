@@ -101,47 +101,59 @@ const metrics: Record<MetricId, MetricDefinition> = {
   'metric.blocked_events': { label: 'Blocked events', format: 'integer', aliases: ['events that were blocked', 'blocked events', 'blocked requests', 'what was blocked', 'blocks', 'denied events'], calculation: 'SUM(ai_requests) WHERE decision = Blocked', lowerIsBetter: true },
   'metric.blocked_rate': { label: 'Blocked rate', format: 'percentage', aliases: ['blocked rate', 'block rate', 'percentage blocked', 'denial rate'], calculation: 'SUM(blocked_events) / SUM(all_events) * 100', lowerIsBetter: true },
   'metric.reviewed_events': { label: 'Events requiring review', format: 'integer', aliases: ['events requiring review', 'reviewed events', 'manual review', 'needs review', 'human review queue'], calculation: 'SUM(ai_requests) WHERE decision = Review', lowerIsBetter: true },
+  'metric.review_rate': { label: 'Human review rate', format: 'percentage', aliases: ['review rate', 'human review rate', 'manual review rate', 'percentage sent to review', 'how often humans review', 'escalation rate', 'human escalation rate'], calculation: 'SUM(review_events) / SUM(all_events) * 100', lowerIsBetter: true },
   'metric.enforce_policy_hits': { label: 'DQI Enforce policy hits', format: 'integer', aliases: ['which dqi enforce policy', 'enforce policy hits', 'policy picked it up', 'policy hits', 'policies triggered', 'triggered policies', 'policy activations'], calculation: 'SUM(ai_requests) WHERE enforce_policy != No policy match' },
   'metric.policy_violation_rate': { label: 'EU AI Act control finding rate', format: 'percentage', aliases: ['eu ai act finding rate', 'control finding rate', 'policy violation rate', 'policy violations', 'violations', 'findings rate', 'control findings', 'failed controls', 'control failures', 'non compliance', 'compliance failures', 'issues found'], calculation: 'SUM(policy_violations) / SUM(ai_requests) * 100', lowerIsBetter: true },
   'metric.assessment_pass_rate': { label: 'Assessment pass rate', format: 'percentage', aliases: ['assessment pass rate', 'assessment results', 'assessments', 'control assessment pass rate'], calculation: 'SUM(assessments_passed) / SUM(assessments) * 100' },
+  'metric.assessment_failure_rate': { label: 'Assessment failure rate', format: 'percentage', aliases: ['assessment failure rate', 'assessment fail rate', 'failed assessments', 'assessments failing', 'control test failures', 'failed control tests', 'what is failing assessment'], calculation: '(SUM(assessments) - SUM(assessments_passed)) / SUM(assessments) * 100', lowerIsBetter: true },
   'metric.high_risk_events': { label: 'High-risk AI events', format: 'integer', aliases: ['high-risk events', 'high risk events', 'critical events', 'risk events', 'high risk usage', 'red flags', 'risky usage', 'dangerous usage'], calculation: 'SUM(high_risk_events)', lowerIsBetter: true },
   'metric.high_risk_usage_rate': { label: 'High-risk usage rate', format: 'percentage', aliases: ['high-risk usage rate', 'high risk usage rate', 'percentage high risk', 'rate of high risk use'], calculation: 'SUM(high_risk_events) / SUM(ai_requests) * 100', lowerIsBetter: true },
   'metric.ungrounded_response_rate': { label: 'Ungrounded response rate', format: 'percentage', aliases: ['ungrounded response rate', 'ungrounded responses', 'hallucination rate', 'hallucinations', 'grounding failures', 'citation failures'], calculation: 'SUM(ungrounded_responses) / SUM(ai_requests) * 100', lowerIsBetter: true },
+  'metric.grounded_response_rate': { label: 'Grounded response rate', format: 'percentage', aliases: ['grounded response rate', 'grounding success rate', 'grounded answers', 'responses with evidence', 'citation success rate', 'answers backed by evidence', 'trustworthy answer rate'], calculation: '(SUM(ai_requests) - SUM(ungrounded_responses)) / SUM(ai_requests) * 100' },
+  'metric.integration_errors': { label: 'Integration errors', format: 'integer', aliases: ['integration error count', 'number of integration errors', 'total integration errors', 'connector error count', 'failed connector calls', 'how many integrations failed'], calculation: 'SUM(integration_errors)', lowerIsBetter: true },
   'metric.integration_error_rate': { label: 'Integration error rate', format: 'percentage', aliases: ['integration error rate', 'integration errors', 'failed integrations', 'errors', 'connector failures'], calculation: 'SUM(integration_errors) / SUM(ai_requests) * 100', lowerIsBetter: true },
   'metric.prompt_injection_attempts': { label: 'Prompt injection attempts', format: 'integer', aliases: ['prompt injection attempts', 'prompt injections', 'jailbreak attempts', 'adversarial prompts', 'jailbreaks', 'injection attacks', 'prompt attacks', 'malicious prompts'], calculation: 'SUM(prompt_injection_attempts)', lowerIsBetter: true },
+  'metric.prompt_injection_rate': { label: 'Prompt injection attempt rate', format: 'percentage', aliases: ['prompt injection rate', 'jailbreak rate', 'adversarial prompt rate', 'percentage of prompt attacks', 'injection attempt percentage', 'how common are jailbreaks', 'prompt injection getting worse', 'rate of injection attempts'], calculation: 'SUM(prompt_injection_attempts) / SUM(ai_requests) * 100', lowerIsBetter: true },
   'metric.pii_exposure_attempts': { label: 'PII exposure attempts', format: 'integer', aliases: ['pii exposure attempts', 'pii leakage attempts', 'data leakage attempts', 'privacy leakage', 'personal data exposure', 'privacy leaks', 'data leaks', 'pii leaks', 'leakage', 'personal information leaks'], calculation: 'SUM(pii_exposure_attempts)', lowerIsBetter: true },
+  'metric.pii_exposure_rate': { label: 'PII exposure attempt rate', format: 'percentage', aliases: ['pii exposure rate', 'privacy leak rate', 'data leakage rate', 'personal data exposure rate', 'percentage of pii attempts', 'how often data leaks'], calculation: 'SUM(pii_exposure_attempts) / SUM(ai_requests) * 100', lowerIsBetter: true },
   'metric.total_tokens': { label: 'Total tokens', format: 'integer', aliases: ['total tokens', 'token usage', 'tokens consumed', 'token volume'], calculation: 'SUM(total_tokens)' },
+  'metric.average_tokens_per_event': { label: 'Average tokens per event', format: 'integer', aliases: ['average tokens per event', 'tokens per request', 'tokens per interaction', 'average token usage', 'token efficiency', 'mean tokens', 'typical prompt size'], calculation: 'SUM(total_tokens) / SUM(ai_requests)', lowerIsBetter: true },
   'metric.estimated_cost': { label: 'Estimated model cost', format: 'currency', aliases: ['estimated cost', 'model cost', 'ai spend', 'token cost', 'cost of usage'], calculation: 'SUM(estimated_cost)', lowerIsBetter: true },
+  'metric.cost_per_event': { label: 'Cost per AI event', format: 'currency', aliases: ['cost per event', 'cost per request', 'cost per interaction', 'unit cost', 'average request cost', 'cost efficiency', 'how much each request costs'], calculation: 'SUM(estimated_cost) / SUM(ai_requests)', lowerIsBetter: true },
   'metric.avg_latency_ms': { label: 'Average latency', format: 'duration', aliases: ['average latency', 'avg latency', 'mean latency', 'response time', 'latency', 'speed', 'how fast'], calculation: 'SUM(latency_ms_total) / SUM(ai_requests)', lowerIsBetter: true },
   'metric.p95_latency_ms': { label: 'P95 latency', format: 'duration', aliases: ['p95 latency', '95th percentile latency', 'slowest responses', 'tail latency', 'slow responses', 'worst latency'], calculation: 'SUM(latency_ms_p95_total) / SUM(ai_requests)', lowerIsBetter: true },
   'metric.unique_users': { label: 'Unique users', format: 'integer', aliases: ['unique users', 'active users', 'distinct users', 'user count'], calculation: 'SUM(unique_users)' },
+  'metric.events_per_user': { label: 'AI events per user', format: 'score', aliases: ['events per user', 'requests per user', 'usage per person', 'interactions per user', 'average user activity', 'adoption intensity', 'engagement per user'], calculation: 'SUM(ai_requests) / SUM(unique_users)' },
   'metric.human_overrides': { label: 'Human overrides', format: 'integer', aliases: ['human overrides', 'overrides', 'manual overrides', 'operator overrides'], calculation: 'SUM(human_overrides)', lowerIsBetter: true },
   'metric.override_rate': { label: 'Override rate', format: 'percentage', aliases: ['override rate', 'human override rate', 'manual override percentage'], calculation: 'SUM(human_overrides) / SUM(ai_requests) * 100', lowerIsBetter: true },
   'metric.audit_coverage_rate': { label: 'Audit coverage rate', format: 'percentage', aliases: ['audit coverage', 'audit coverage rate', 'logging coverage', 'coverage report', 'coverage'], calculation: 'SUM(assessments) / SUM(ai_requests) * 100' },
   'metric.evidence_completeness_rate': { label: 'Evidence completeness rate', format: 'percentage', aliases: ['evidence completeness', 'evidence completeness rate', 'missing evidence', 'audit evidence completeness'], calculation: 'SUM(evidence_complete) / SUM(ai_requests) * 100' },
+  'metric.evidence_gap_rate': { label: 'Missing evidence rate', format: 'percentage', aliases: ['missing evidence rate', 'evidence gap rate', 'incomplete evidence', 'evidence missing', 'audit trail gaps', 'logging gaps', 'records without evidence', 'what evidence is missing'], calculation: '(SUM(ai_requests) - SUM(evidence_complete)) / SUM(ai_requests) * 100', lowerIsBetter: true },
   'metric.model_drift_score': { label: 'Model drift score', format: 'score', aliases: ['model drift', 'drift score', 'model drift score', 'behaviour drift', 'model stability', 'behavior drift', 'drifting', 'quality drift'], calculation: 'SUM(model_drift_score_total) / SUM(ai_requests)', lowerIsBetter: true },
   'metric.exception_approvals': { label: 'Exception approvals', format: 'integer', aliases: ['exception approvals', 'approved exceptions', 'policy exceptions', 'temporary exceptions'], calculation: 'SUM(exception_approvals)', lowerIsBetter: true },
   'metric.unresolved_findings': { label: 'Unresolved findings', format: 'integer', aliases: ['unresolved findings', 'open findings', 'outstanding findings', 'unresolved issues', 'open issues', 'open risks', 'still open'], calculation: 'SUM(unresolved_findings)', lowerIsBetter: true },
+  'metric.unresolved_finding_rate': { label: 'Unresolved finding rate', format: 'percentage', aliases: ['unresolved finding rate', 'open finding rate', 'percentage unresolved', 'finding backlog rate', 'outstanding issue rate', 'proportion still open', 'proportion of findings still open', 'proportion of findings are still open', 'share of findings open'], calculation: 'SUM(unresolved_findings) / SUM(ai_requests) * 100', lowerIsBetter: true },
   'metric.retention_breaches': { label: 'Retention breaches', format: 'integer', aliases: ['retention breaches', 'retention failures', 'purpose limitation breaches', 'retention policy breaches'], calculation: 'SUM(retention_breaches)', lowerIsBetter: true },
-  'metric.sla_breach_rate': { label: 'SLA breach rate', format: 'percentage', aliases: ['sla breach rate', 'sla breaches', 'service level breaches', 'operational breach rate'], calculation: 'SUM(sla_breaches) / SUM(ai_requests) * 100', lowerIsBetter: true }
+  'metric.sla_breach_rate': { label: 'SLA breach rate', format: 'percentage', aliases: ['sla breach rate', 'sla breaches', 'service level breaches', 'operational breach rate'], calculation: 'SUM(sla_breaches) / SUM(ai_requests) * 100', lowerIsBetter: true },
+  'metric.sla_breaches': { label: 'SLA breaches', format: 'integer', aliases: ['number of sla breaches', 'total sla breaches', 'sla breach count', 'missed service levels', 'how many sla failures'], calculation: 'SUM(sla_breaches)', lowerIsBetter: true }
 };
 
 const dimensions: Record<DimensionId, DimensionDefinition> = {
-  'dimension.integration': { label: 'Integration', aliases: ['by integration', 'split by integration', 'integrations', 'application', 'app'], field: 'integration' },
-  'dimension.model': { label: 'Model', aliases: ['by model', 'split by model', 'models', 'foundation model'], field: 'model' },
-  'dimension.environment': { label: 'Environment', aliases: ['by environment', 'split by environment', 'environments'], field: 'environment' },
+  'dimension.integration': { label: 'Integration', aliases: ['by integration', 'split by integration', 'integrations', 'application', 'app', 'connector', 'connection', 'service', 'source system', 'api integration'], field: 'integration' },
+  'dimension.model': { label: 'Model', aliases: ['by model', 'split by model', 'models', 'foundation model', 'llm', 'language model', 'model name', 'deployed model'], field: 'model' },
+  'dimension.environment': { label: 'Environment', aliases: ['by environment', 'split by environment', 'environments', 'deployment stage', 'runtime environment', 'prod vs staging', 'live vs test'], field: 'environment' },
   'dimension.enforce_policy': { label: 'DQI Enforce policy', aliases: ['which dqi enforce policy', 'which policy', 'by enforce policy', 'by policy', 'policy picked it up', 'policies triggered'], field: 'enforcePolicy' },
   'dimension.decision': { label: 'Decision', aliases: ['blocked vs passed', 'passed vs blocked', 'blocked and passed', 'by decision', 'by outcome', 'decision outcome', 'pass block review'], field: 'decision' },
-  'dimension.severity': { label: 'Severity', aliases: ['by severity', 'severity level', 'risk severity'], field: 'severity' },
-  'dimension.risk_tier': { label: 'Risk tier', aliases: ['by risk tier', 'risk tier', 'risk category', 'risk classification'], field: 'riskTier' },
-  'dimension.region': { label: 'Region', aliases: ['by region', 'region', 'geo', 'geography', 'country region'], field: 'region' },
+  'dimension.severity': { label: 'Severity', aliases: ['by severity', 'severity level', 'risk severity', 'impact level', 'criticality', 'priority', 'seriousness'], field: 'severity' },
+  'dimension.risk_tier': { label: 'Risk tier', aliases: ['by risk tier', 'risk tier', 'risk category', 'risk classification', 'ai risk class', 'risk level', 'high risk vs limited'], field: 'riskTier' },
+  'dimension.region': { label: 'Region', aliases: ['by region', 'region', 'geo', 'geography', 'country region', 'market', 'jurisdiction', 'territory', 'location'], field: 'region' },
   'dimension.business_unit': { label: 'Business unit', aliases: ['by business unit', 'business unit', 'department', 'departments', 'team', 'teams', 'function', 'business area', 'area'], field: 'businessUnit' },
-  'dimension.user_role': { label: 'User role', aliases: ['by user role', 'user role', 'persona', 'role'], field: 'userRole' },
-  'dimension.data_class': { label: 'Data class', aliases: ['by data class', 'data class', 'data classification', 'sensitivity'], field: 'dataClass' },
-  'dimension.regulation': { label: 'Regulation', aliases: ['by regulation', 'regulation', 'framework', 'standard'], field: 'regulation' },
+  'dimension.user_role': { label: 'User role', aliases: ['by user role', 'user role', 'persona', 'role', 'user type', 'actor', 'who used it', 'job role'], field: 'userRole' },
+  'dimension.data_class': { label: 'Data class', aliases: ['by data class', 'data class', 'data classification', 'sensitivity', 'information classification', 'data sensitivity', 'confidentiality'], field: 'dataClass' },
+  'dimension.regulation': { label: 'Regulation', aliases: ['by regulation', 'regulation', 'framework', 'standard', 'law', 'regulatory regime', 'compliance framework', 'obligation'], field: 'regulation' },
   'dimension.control': { label: 'Control', aliases: ['by control', 'control area', 'control family', 'audit control', 'guardrail', 'guardrails', 'requirement'], field: 'control' },
-  'dimension.vendor': { label: 'Model vendor', aliases: ['by vendor', 'vendor', 'provider', 'model provider'], field: 'vendor' },
-  'dimension.system': { label: 'DQI system', aliases: ['by system', 'dqi system', 'platform component', 'capability'], field: 'system' },
+  'dimension.vendor': { label: 'Model vendor', aliases: ['by vendor', 'vendor', 'provider', 'model provider', 'ai supplier', 'model maker', 'foundation model provider'], field: 'vendor' },
+  'dimension.system': { label: 'DQI system', aliases: ['by system', 'dqi system', 'systems', 'live systems', 'platform component', 'capability', 'product module'], field: 'system' },
   'dimension.overall': { label: 'Overall', aliases: ['overall', 'total', 'no split', 'single kpi'] }
 };
 
@@ -218,29 +230,41 @@ function metricValue(metricId: MetricId, rows: DemoAggregateRow[]): number {
     case 'metric.blocked_events': return decisionTotal(rows, 'Blocked');
     case 'metric.blocked_rate': return requests ? decisionTotal(rows, 'Blocked') / requests * 100 : 0;
     case 'metric.reviewed_events': return decisionTotal(rows, 'Review');
+    case 'metric.review_rate': return requests ? decisionTotal(rows, 'Review') / requests * 100 : 0;
     case 'metric.enforce_policy_hits': return rows.filter((row) => row.enforcePolicy !== 'No policy match').reduce((sum, row) => sum + row.aiRequests, 0);
     case 'metric.policy_violation_rate': return requests ? total(rows, 'policyViolations') / requests * 100 : 0;
     case 'metric.assessment_pass_rate': return total(rows, 'assessments') ? total(rows, 'assessmentsPassed') / total(rows, 'assessments') * 100 : 0;
+    case 'metric.assessment_failure_rate': return total(rows, 'assessments') ? (total(rows, 'assessments') - total(rows, 'assessmentsPassed')) / total(rows, 'assessments') * 100 : 0;
     case 'metric.high_risk_events': return total(rows, 'highRiskEvents');
     case 'metric.high_risk_usage_rate': return requests ? total(rows, 'highRiskEvents') / requests * 100 : 0;
     case 'metric.ungrounded_response_rate': return requests ? total(rows, 'ungroundedResponses') / requests * 100 : 0;
+    case 'metric.grounded_response_rate': return requests ? (requests - total(rows, 'ungroundedResponses')) / requests * 100 : 0;
+    case 'metric.integration_errors': return total(rows, 'integrationErrors');
     case 'metric.integration_error_rate': return requests ? total(rows, 'integrationErrors') / requests * 100 : 0;
     case 'metric.prompt_injection_attempts': return total(rows, 'promptInjectionAttempts');
+    case 'metric.prompt_injection_rate': return requests ? total(rows, 'promptInjectionAttempts') / requests * 100 : 0;
     case 'metric.pii_exposure_attempts': return total(rows, 'piiExposureAttempts');
+    case 'metric.pii_exposure_rate': return requests ? total(rows, 'piiExposureAttempts') / requests * 100 : 0;
     case 'metric.total_tokens': return total(rows, 'totalTokens');
+    case 'metric.average_tokens_per_event': return requests ? total(rows, 'totalTokens') / requests : 0;
     case 'metric.estimated_cost': return total(rows, 'estimatedCost');
+    case 'metric.cost_per_event': return requests ? total(rows, 'estimatedCost') / requests : 0;
     case 'metric.avg_latency_ms': return requests ? total(rows, 'latencyMsTotal') / requests : 0;
     case 'metric.p95_latency_ms': return requests ? total(rows, 'latencyMsP95Total') / requests : 0;
     case 'metric.unique_users': return total(rows, 'uniqueUsers');
+    case 'metric.events_per_user': return total(rows, 'uniqueUsers') ? requests / total(rows, 'uniqueUsers') : 0;
     case 'metric.human_overrides': return total(rows, 'humanOverrides');
     case 'metric.override_rate': return requests ? total(rows, 'humanOverrides') / requests * 100 : 0;
     case 'metric.audit_coverage_rate': return requests ? total(rows, 'assessments') / requests * 100 : 0;
     case 'metric.evidence_completeness_rate': return requests ? total(rows, 'evidenceComplete') / requests * 100 : 0;
+    case 'metric.evidence_gap_rate': return requests ? (requests - total(rows, 'evidenceComplete')) / requests * 100 : 0;
     case 'metric.model_drift_score': return requests ? total(rows, 'modelDriftScoreTotal') / requests : 0;
     case 'metric.exception_approvals': return total(rows, 'exceptionApprovals');
     case 'metric.unresolved_findings': return total(rows, 'unresolvedFindings');
+    case 'metric.unresolved_finding_rate': return requests ? total(rows, 'unresolvedFindings') / requests * 100 : 0;
     case 'metric.retention_breaches': return total(rows, 'retentionBreaches');
     case 'metric.sla_breach_rate': return requests ? total(rows, 'slaBreaches') / requests * 100 : 0;
+    case 'metric.sla_breaches': return total(rows, 'slaBreaches');
   }
 }
 
@@ -269,6 +293,21 @@ const filterValues: { field: FilterField; value: string; aliases: string[] }[] =
   { field: 'riskTier', value: 'High-risk', aliases: ['high-risk', 'high risk tier', 'high risk category'] }
 ];
 filterValues.push({ field: 'environment', value: 'Production', aliases: ['prod', 'in prod', 'production'] });
+filterValues.push(
+  { field: 'environment', value: 'Production', aliases: ['live', 'customer facing', 'customer-facing'] },
+  { field: 'environment', value: 'Staging', aliases: ['preprod', 'pre-prod', 'uat'] },
+  { field: 'environment', value: 'Development', aliases: ['dev', 'development only'] },
+  { field: 'environment', value: 'Sandbox', aliases: ['test sandbox', 'experimental'] },
+  { field: 'region', value: 'EU', aliases: ['europe', 'european union', 'emea eu'] },
+  { field: 'region', value: 'UK', aliases: ['united kingdom', 'britain', 'british'] },
+  { field: 'region', value: 'US', aliases: ['united states', 'usa', 'america', 'american'] },
+  { field: 'region', value: 'APAC', aliases: ['asia pacific', 'asia-pacific'] },
+  { field: 'severity', value: 'Medium', aliases: ['medium severity', 'moderate findings'] },
+  { field: 'severity', value: 'Info', aliases: ['informational', 'info severity'] },
+  { field: 'riskTier', value: 'Elevated', aliases: ['elevated risk', 'elevated tier'] },
+  { field: 'riskTier', value: 'Limited', aliases: ['limited risk', 'limited tier'] },
+  { field: 'riskTier', value: 'Minimal', aliases: ['minimal risk', 'low risk', 'minimal tier'] }
+);
 
 function promptFilters(text: string): GeneratedWidget['filters'] {
   const seen = new Set<string>();
@@ -286,7 +325,7 @@ function promptFilters(text: string): GeneratedWidget['filters'] {
 
 function requestedWeeks(text: string): 4 | 12 | 26 {
   const found = text.match(/(?:last|past|over)\s+(\d+)\s+weeks?/i);
-  const value = found?.[1] ? Number(found[1]) : text.includes('last month') || text.includes('past month') ? 4 : text.includes('quarter') ? 12 : text.includes('half year') || text.includes('six months') ? 26 : 12;
+  const value = found?.[1] ? Number(found[1]) : /(?:last|past|this) month|monthly/.test(text) ? 4 : /quarter|quarterly|three months/.test(text) ? 12 : /half year|six months|year to date|ytd|annual|yearly/.test(text) ? 26 : 12;
   return value <= 4 ? 4 : value <= 12 ? 12 : 26;
 }
 
@@ -295,11 +334,11 @@ function customTitle(prompt: string): string | undefined {
 }
 
 function inferIntent(text: string): Intent {
-  if (text.includes('exception') || text.includes('unresolved') || text.includes('open finding')) return 'exception_review';
-  if (text.includes('coverage') || text.includes('evidence completeness')) return 'coverage_report';
-  if (text.includes('top') || text.includes('highest') || text.includes('worst') || text.includes('biggest')) return 'top_n';
-  if (text.includes('compare') || text.includes(' vs ') || text.includes('versus')) return 'comparison';
-  if (text.includes('trend') || text.includes('over time') || text.includes('weekly')) return 'trend';
+  if (/exception|unresolved|open finding|outstanding|backlog|needs attention|investigate|remediate/.test(text)) return 'exception_review';
+  if (/coverage|evidence completeness|audit readiness|how complete|missing evidence|logging gap/.test(text)) return 'coverage_report';
+  if (/top|bottom|highest|lowest|worst|best|biggest|smallest|rank|leading|most|least/.test(text)) return 'top_n';
+  if (/compare|comparison| vs |versus|difference between|relative to|against|which is better/.test(text)) return 'comparison';
+  if (/trend|over time|weekly|monthly|quarterly|trajectory|direction|changing|increasing|decreasing|spike|movement|evolution/.test(text)) return 'trend';
   return 'breakdown';
 }
 
@@ -399,7 +438,8 @@ export function interpretWidgetPrompt(raw: unknown, proposal?: QwenSemanticPropo
   const filters = [...validatedFilters(proposal?.filters), ...promptFilters(text)].filter((filter, index, list) => list.findIndex((item) => item.field === filter.field && item.value === filter.value) === index).slice(0, 12);
   const unsupportedRequests = ['3d', 'map', 'scatter', 'forecast', 'raw prompt export'].filter((term) => text.includes(term)).map((term) => `${term} is not enabled in this governed demo`);
   const metricId = proposedMetric ?? metricMatch.id;
-  const dimensionId = proposedDimension ?? dimensionMatch.id;
+  const singleValueRequested = /single kpi|single number|one number|headline figure|overall total|without a breakdown/.test(text);
+  const dimensionId = singleValueRequested ? 'dimension.overall' : proposedDimension ?? dimensionMatch.id;
   const metric = metrics[metricId];
   const dimension = dimensions[dimensionId];
   return generatedWidgetSchema.parse({

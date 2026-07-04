@@ -37,6 +37,23 @@ describe('safe calculation foundation', () => {
 });
 
 describe('natural-language DQI audit widgets', () => {
+  it.each([
+    ['Where are our biggest audit trail gaps across live systems this quarter?', 'metric.evidence_gap_rate', 'dimension.system'],
+    ['Which models have the highest cost per request for confidential data?', 'metric.cost_per_event', 'dimension.model'],
+    ['How often do AI events need a human review, split by business team?', 'metric.review_rate', 'dimension.business_unit'],
+    ['Compare grounding success between model providers in production', 'metric.grounded_response_rate', 'dimension.vendor'],
+    ['Rank applications by assessment failure rate for high-risk AI', 'metric.assessment_failure_rate', 'dimension.integration'],
+    ['Is prompt injection getting worse over time in Europe?', 'metric.prompt_injection_rate', 'dimension.overall'],
+    ['Show average tokens per interaction by model', 'metric.average_tokens_per_event', 'dimension.model'],
+    ['What proportion of findings are still open by regulatory framework?', 'metric.unresolved_finding_rate', 'dimension.regulation'],
+    ['Which user roles generate the most AI activity per person?', 'metric.events_per_user', 'dimension.user_role'],
+    ['Give me a single KPI for privacy leak rate in live systems', 'metric.pii_exposure_rate', 'dimension.overall']
+  ])('maps broader business language: %s', (prompt, metricId, dimensionId) => {
+    const result = generateWidget({ prompt }, now);
+    expect(result.widget.metric.id).toBe(metricId);
+    expect(result.widget.dimension.id).toBe(dimensionId);
+  });
+
   it('surfaces actionable provider errors for an explicitly configured model', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ error: { message: 'insufficient_quota' } }), { status: 429, headers: { 'content-type': 'application/json' } }));
     await expect(generateWidgetWithQwen({
