@@ -15,6 +15,16 @@ Open `http://localhost:5173`. The API runs on `http://localhost:3001`. Try promp
 
 > Show the EU AI Act control finding rate by integration for the last 12 weeks as a smooth area chart with an aurora palette.
 
+The product switcher links the complete demo platform together. Its destinations can be changed per environment:
+
+```bash
+VITE_DQI_EXPLORE_URL=https://www.getdqi.com
+VITE_DQI_ASSESS_URL=https://your-assess-service.example
+VITE_DQI_ENFORCE_URL=https://your-enforce-service.example
+```
+
+The demo presents all products as available. Production access must be resolved from server-side tenant entitlements rather than treating navigation links as access control.
+
 The governed language compiler also understands DQI usage outcomes and filters. For example: "Which DQI Enforce policy picked up critical events in production?", "Compare blocked vs passed AI usage by decision", or "Show privacy leaks across teams in prod last month as a bar chart."
 
 After generating a report, the live view editor accepts follow-up prompts such as "change to sunset bars", "move the x axis to the top and rotate labels 45 degrees", or "use a light theme and hide grid lines." These refinements preserve the governed KPI, filters, query evidence, and calculated series.

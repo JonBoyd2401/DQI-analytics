@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { widgetGenerationResponseSchema, type WidgetGenerationResponse } from '@dqi/contracts';
+import { DqiPlatformNav } from './DqiPlatformNav.js';
 
 const examples = ['Show the top EU AI Act control findings by control for the last 12 weeks as a sunset bar chart', 'Compare blocked vs passed AI usage by decision in production over the past 12 weeks as a smooth ocean area chart', 'Trend model drift score for Qwen 3.6 by business unit over the last 26 weeks with a dark line chart', 'Show audit coverage and evidence completeness for EU AI Act by regulation in the EU region as a light KPI', 'Which DQI Enforce policy picked up prompt injection attempts in production for Qwen 3.6?', 'Show estimated model cost by vendor for confidential data over 12 weeks as ranked horizontal bars', 'Rank unresolved EU AI Act findings by business unit and severity using sunset columns', 'Trend hallucination rate by model in production over 26 weeks as a smooth area chart', 'Show human override rate by user role for high-risk systems as a donut chart', 'Compare assessment pass rate by regulation in the EU region as horizontal bars', 'Which integrations have the highest SLA breach rate for restricted data?', 'Show evidence completeness by DQI system as a light ocean KPI', 'Trend token cost by model vendor for production over the last 12 weeks'];
 examples.push(
@@ -196,9 +197,7 @@ export function DqiAuditStudio() {
           </div>
         </div>
         <div className="nav-actions">
-          <a className="wheel-link" href="/dqi-wheel.html">
-            Explore DQI →
-          </a>
+          <DqiPlatformNav />
           <div className="dqi-demo">
             <i />
             Synthetic audit event store

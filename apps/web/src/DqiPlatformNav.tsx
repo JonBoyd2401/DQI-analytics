@@ -1,0 +1,49 @@
+import { useEffect, useRef, useState } from 'react';
+
+const products = [
+  { id: 'explore', name: 'Explore DQI', description: 'Standards, framework and guided resources', href: import.meta.env.VITE_DQI_EXPLORE_URL || '/dqi-wheel.html', accent: '#d879ff' },
+  { id: 'assess', name: 'DQI Assess', description: 'Measure maturity and prioritise improvements', href: import.meta.env.VITE_DQI_ASSESS_URL || 'https://dqi-assess.onrender.com', accent: '#ffd166' },
+  { id: 'enforce', name: 'DQI Enforce', description: 'Apply policy controls to live AI systems', href: import.meta.env.VITE_DQI_ENFORCE_URL || 'https://aiserbisyo.com/platform', accent: '#51e4bb' },
+  { id: 'analytics', name: 'DQI Analytics', description: 'Turn governed evidence into audit reporting', href: '/', accent: '#809dff' },
+] as const;
+
+export function DqiPlatformNav() {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const close = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, []);
+
+  return (
+    <div className="platform-switcher" ref={menuRef}>
+      <button type="button" className="platform-switcher-button" aria-expanded={open} aria-haspopup="menu" onClick={() => setOpen((value) => !value)}>
+        <span className="switcher-grid" aria-hidden="true"><i /><i /><i /><i /></span>
+        DQI products
+        <span aria-hidden="true">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="platform-menu" role="menu">
+          <header><div><strong>DQI platform</strong><small>One framework. Four connected products.</small></div><span>DEMO ACCESS</span></header>
+          <div className="platform-products">
+            {products.map((product) => {
+              const active = product.id === 'analytics';
+              return (
+                <a key={product.id} role="menuitem" href={product.href} aria-current={active ? 'page' : undefined} className={active ? 'active' : undefined}>
+                  <i style={{ background: product.accent, boxShadow: `0 0 15px ${product.accent}55` }} />
+                  <span><strong>{product.name}</strong><small>{product.description}</small></span>
+                  <b>{active ? 'Current' : 'Open →'}</b>
+                </a>
+              );
+            })}
+          </div>
+          <footer>Demo workspace includes all products. Production access is controlled per tenant and subscription.</footer>
+        </div>
+      )}
+    </div>
+  );
+}
