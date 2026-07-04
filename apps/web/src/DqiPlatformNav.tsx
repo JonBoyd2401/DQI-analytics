@@ -20,12 +20,13 @@ export function DqiPlatformNav() {
   }, []);
 
   return (
-    <div className="platform-switcher" ref={menuRef}>
+    <div className="platform-switcher" ref={menuRef} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <button type="button" className="platform-switcher-button" aria-expanded={open} aria-haspopup="menu" onClick={() => setOpen((value) => !value)}>
         <span className="switcher-grid" aria-hidden="true"><i /><i /><i /><i /></span>
         DQI products
         <span aria-hidden="true">{open ? '▲' : '▼'}</span>
       </button>
+      <a className="platform-switcher-button" href="mailto:dqi@q4it.eu?subject=DQI%20solution%20access">Contact us</a>
       {open && (
         <div className="platform-menu" role="menu">
           <header><div><strong>DQI platform</strong><small>One framework. Four connected products.</small></div><span>DEMO ACCESS</span></header>
@@ -41,7 +42,7 @@ export function DqiPlatformNav() {
               );
             })}
           </div>
-          <footer>Demo workspace includes all products. Production access is controlled per tenant and subscription.</footer>
+          <footer>Demo workspace includes all products. Production access is controlled per tenant and subscription. <a style={{ color: '#57e3bc', fontWeight: 700 }} href="mailto:dqi@q4it.eu?subject=DQI%20solution%20access">Contact us for access →</a></footer>
         </div>
       )}
     </div>
