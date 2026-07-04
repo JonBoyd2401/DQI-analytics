@@ -199,11 +199,12 @@
     .std-authority { color:#9eeaff; font-size:10px; margin-top:3px; line-height:1.35; }
     .std-source { display:inline-block; color:#93fbff; font-size:10px; margin-top:6px; text-decoration:none; }
     .std-source:hover, .std-source:focus-visible { text-decoration:underline; outline:none; }
-    .regional-context { display:grid; gap:8px; margin-top:10px; }
-    .regional-item { border:1px solid rgba(255,255,255,.1); background:rgba(0,0,0,.12); border-radius:12px; padding:10px; }
-    .regional-item strong { color:#f3f8ff; font-size:12px; }
-    .regional-item span { display:block; color:#9eeaff; font-size:10px; margin-top:3px; }
-    .regional-item p { color:#aebfd3; font-size:11px; line-height:1.4; margin:7px 0 0; }
+    .mapping-context { display:grid; gap:8px; margin-top:10px; }
+    .mapping-item { border:1px solid rgba(103,232,249,.18); background:rgba(0,0,0,.12); border-radius:12px; padding:11px; }
+    .mapping-item strong { color:#f3f8ff; font-size:12px; }
+    .mapping-item span { display:block; color:#9eeaff; font-size:10px; margin-top:3px; }
+    .mapping-item p { color:#aebfd3; font-size:11px; line-height:1.4; margin:7px 0 0; }
+    .mapping-basis { color:#9de8c9!important; font-weight:750; }
     .measure-panel { margin-top:16px; }
     .measure-panel summary { cursor:pointer; list-style:none; color:#dceeff; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.09em; padding:10px 0; border-top:1px solid rgba(255,255,255,.1); }
     .measure-panel summary::-webkit-details-marker { display:none; }
@@ -288,8 +289,8 @@
       <div class="brand-mark" aria-hidden="true"></div>
       <div>
         <h1>Explore DQI</h1>
-        <div class="subtitle">Explore 12 dimensions, 112 measures and their standards, regulatory and maturity mappings</div>
-        <div class="market-position">DQI — the most comprehensive data &amp; AI compliance standard on the market.</div>
+        <div class="subtitle">Prove compliance robustly with traceable controls, evidence expectations and regulatory mappings across 12 dimensions and 112 measures</div>
+        <div class="market-position">Build lasting trust through governance that is visible, explainable and supported by evidence.</div>
       </div>
     </div>
     <div class="pill-row">
@@ -362,7 +363,7 @@
   </main>
 
   <footer>
-    <div class="source-note">Prototype built from the DQI Standard v1.0 content: 12 domains, 112 measures, domain purpose statements, regulatory context, and measure-level normative references. Middle East mappings are indicative, sourced from official authority pages reviewed in July 2026, and are not legal advice or a determination of compliance. Validate scope, free-zone rules, sector requirements, amendments and implementation guidance with the responsible authority and qualified counsel.</div>
+    <div class="source-note">DQI Standard v1.0 connects 12 dimensions and 112 measurable governance outcomes to international standards, AI and privacy regulation, and Middle East regulatory instruments. Every framework profile identifies its issuing authority, control focus, mapped DQI dimensions and authoritative source. Use the mapping to structure evidence and demonstrate control coverage; confirm legal applicability, amendments, free-zone and sector requirements with the responsible authority.</div>
   </footer>
 </div>
 
@@ -415,6 +416,58 @@ const MIDDLE_EAST = [
     source:'https://www.pdp.gov.bh/en/assets/pdf/regulations.pdf'
   }
 ];
+const STANDARD_PROFILES = {
+  'ISO 8000': {
+    authority:'International Organization for Standardization (ISO)',
+    instrument:'International data-quality standards family',
+    focus:'Data-quality principles, master data, quality measurement, governance, exchange and sustained improvement.',
+    source:'https://www.iso.org/standard/81745.html'
+  },
+  'ISO/IEC 42001': {
+    authority:'ISO and International Electrotechnical Commission (IEC)',
+    instrument:'ISO/IEC 42001:2023 AI management system standard',
+    focus:'AI governance, leadership, risk and opportunity management, lifecycle controls, transparency, monitoring and continual improvement.',
+    source:'https://www.iso.org/standard/42001'
+  },
+  'EU AI Act': {
+    authority:'European Union',
+    instrument:'Regulation (EU) 2024/1689',
+    focus:'Risk classification, data governance, technical documentation, record keeping, transparency, human oversight, accuracy and post-market monitoring.',
+    source:'https://eur-lex.europa.eu/eli/reg/2024/1689/oj/eng'
+  },
+  'GDPR / UK GDPR': {
+    authority:'European Union and United Kingdom data-protection authorities',
+    instrument:'EU GDPR and retained UK GDPR accountability frameworks',
+    focus:'Lawfulness, fairness, accountability, data quality, privacy by design, rights, security, retention and international transfers.',
+    source:'https://eur-lex.europa.eu/eli/reg/2016/679/oj/eng'
+  },
+  'NIST AI RMF': {
+    authority:'US National Institute of Standards and Technology (NIST)',
+    instrument:'AI Risk Management Framework 1.0 and supporting profiles',
+    focus:'Govern, Map, Measure and Manage practices for valid, reliable, safe, secure, accountable, transparent and fair AI.',
+    source:'https://www.nist.gov/itl/ai-risk-management-framework'
+  },
+  'DAMA DMBOK': {
+    authority:'DAMA International',
+    instrument:'Data Management Body of Knowledge',
+    focus:'Enterprise data governance, architecture, quality, metadata, stewardship, integration, lifecycle and organisational capability.',
+    source:'https://www.dama.org/cpages/body-of-knowledge'
+  },
+  'ISO 27001': {
+    authority:'ISO and International Electrotechnical Commission (IEC)',
+    instrument:'ISO/IEC 27001:2022 information security management system standard',
+    focus:'Risk-based protection of confidentiality, integrity and availability through governed people, process and technology controls.',
+    source:'https://www.iso.org/standard/27001'
+  }
+};
+MIDDLE_EAST.forEach(regime => {
+  STANDARD_PROFILES[regime.standard] = {
+    authority:`${regime.authority} · ${regime.jurisdiction}`,
+    instrument:regime.instrument,
+    focus:regime.focus,
+    source:regime.source
+  };
+});
 const domains = DATA.domains;
 domains.forEach(domain => { domain.standards = domain.standards.filter(standard => standard !== 'Sector regulation'); });
 MIDDLE_EAST.forEach(regime => regime.domains.forEach(id => {
@@ -601,8 +654,13 @@ function renderDetail() {
   const measuresOpen = window.matchMedia('(min-width: 641px)').matches ? ' open' : '';
   centerSub.textContent = `${d.id} selected`;
   const standardChips = d.standards.map(s=>`<span class="chip"><b>↳</b>${s}</span>`).join('');
-  const regionalMappings = MIDDLE_EAST.filter(regime => regime.domains.includes(d.id));
-  const regionalContext = regionalMappings.map(regime => `<div class="regional-item"><strong>${regime.standard}</strong><span>${regime.authority} · ${regime.jurisdiction}</span><p>${regime.focus} <a class="std-source" href="${regime.source}" target="_blank" rel="noopener noreferrer">Official source ↗</a></p></div>`).join('');
+  const mappingContext = d.standards.map(standard => {
+    const profile = STANDARD_PROFILES[standard];
+    if(!profile) return '';
+    const referencedMeasures = d.measures.filter(measure => measure.tags.includes(standard) || measure.refs.includes(standard.replace(' / UK',''))).length;
+    const basis = referencedMeasures ? `${referencedMeasures} measure-level reference${referencedMeasures===1?'':'s'} in ${d.id}` : `Domain-level control alignment in ${d.id}`;
+    return `<div class="mapping-item"><strong>${standard}</strong><span>${profile.authority}</span><span>${profile.instrument}</span><p>${profile.focus}</p><p class="mapping-basis">Traceable mapping · ${basis}</p><a class="std-source" href="${profile.source}" target="_blank" rel="noopener noreferrer">Authoritative source ↗</a></div>`;
+  }).join('');
   const measures = d.measures.map(m=>{
     const hidden = searchTerm && ![m.id,m.name,m.governs,m.refs,d.name,d.id].join(' ').toLowerCase().includes(searchTerm.toLowerCase()) ? ' hidden' : '';
     const refs = m.refs ? `<div class="measure-refs">${m.refs}</div>` : '';
@@ -617,23 +675,23 @@ function renderDetail() {
       <p class="copy">${d.purpose}</p>
       <div class="weight-explainer"><strong>What does ${d.weighting} mean?</strong> DQI weights each of its 12 dimensions equally: 100% ÷ 12. Equal weighting prevents strength in one area from masking a material weakness elsewhere and keeps the assessment balanced across business value, data quality, AI, governance, security and sustainability.</div>
       <div class="impact"><strong>Why ${d.name} matters:</strong> ${d.impact}</div>
-      <div class="section-title">Standards and regulatory mapping</div>
+      <div class="section-title">Traceable standards and regulatory mappings</div>
       <div class="chips">${standardChips}</div>
       <p class="copy" style="margin-top:10px">${d.regulatoryContext}</p>
-      ${regionalMappings.length ? `<div class="section-title">Middle East regulatory alignment</div><div class="regional-context">${regionalContext}</div>` : ''}
+      <div class="mapping-context">${mappingContext}</div>
       <details class="measure-panel"${measuresOpen}><summary>Measures in this dimension (${d.measureCount})</summary><div class="measure-list">${measures}</div></details>
     </div>`;
 }
 function renderMatrix() {
   stdGrid.textContent = '';
   const visibleStandards = standards.filter(s => s==='Sector regulation' ? domains.some(d=>d.standards.includes(s)) : true);
-  document.getElementById('coverageCount').textContent = `${visibleStandards.length} references`;
+  document.getElementById('coverageCount').textContent = `${visibleStandards.length} mapped frameworks`;
   visibleStandards.forEach(std => {
     const ds = domains.filter(d=>d.standards.includes(std));
-    const regime = MIDDLE_EAST.find(item => item.standard === std);
+    const profile = STANDARD_PROFILES[std];
     const row = document.createElement('div');
     row.className='std-row';
-    row.innerHTML = `<div><div class="std-name">${std}</div>${regime ? `<div class="std-authority">${regime.authority}<br>${regime.jurisdiction}</div><a class="std-source" href="${regime.source}" target="_blank" rel="noopener noreferrer">Official source ↗</a>` : ''}</div><div class="domain-tags">${ds.map(d=>`<span class="tiny-domain" data-domain="${d.id}">${d.id} · ${d.name}</span>`).join('')}</div>`;
+    row.innerHTML = `<div><div class="std-name">${std}</div>${profile ? `<div class="std-authority">${profile.authority}<br>${profile.instrument}</div><a class="std-source" href="${profile.source}" target="_blank" rel="noopener noreferrer">Authoritative source ↗</a>` : ''}</div><div><p class="copy" style="margin:0 0 8px">${profile?.focus || 'Mapped through DQI domain outcomes and measure references.'}</p><div class="mapping-basis" style="font-size:10px;margin-bottom:8px">Traceable across ${ds.length} DQI dimension${ds.length===1?'':'s'}</div><div class="domain-tags">${ds.map(d=>`<span class="tiny-domain" data-domain="${d.id}">${d.id} · ${d.name}</span>`).join('')}</div></div>`;
     row.querySelectorAll('.tiny-domain').forEach(el=>el.addEventListener('click',()=>{
       const idx = domains.findIndex(x=>x.id===el.dataset.domain); if(idx>=0) selectDomain(idx);
       window.scrollTo({top:0, behavior:'smooth'});
