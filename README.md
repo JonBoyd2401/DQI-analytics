@@ -20,7 +20,8 @@ Open `http://localhost:5173`. The API runs on `http://localhost:3001`. Try promp
 The product switcher links the complete demo platform together. Its destinations can be changed per environment:
 
 ```bash
-VITE_DQI_EXPLORE_URL=https://www.getdqi.com
+VITE_DQI_HOME_URL=https://webpage-examples-dqi.onrender.com
+VITE_DQI_EXPLORE_URL=https://dqi-analytics.onrender.com/dqi-wheel.html
 VITE_DQI_ASSESS_URL=https://your-assess-service.example
 VITE_DQI_ENFORCE_URL=https://your-enforce-service.example
 ```

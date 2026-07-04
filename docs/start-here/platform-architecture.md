@@ -24,7 +24,7 @@ flowchart LR
     Analytics --> Assess
 ```
 
-A visitor starts at `www.getdqi.com`, opens the framework explorer or a product demo, and can move between products using the shared product switcher. "DQI Home" returns to the public front door; "Explore DQI" opens the interactive framework wheel. Demo access does not imply a production entitlement. Customers request real-solution access through `dqi@q4it.eu`.
+A visitor starts at `https://webpage-examples-dqi.onrender.com`, opens the framework explorer or a product demo, and can move between products using the shared product switcher. "DQI Home" always returns to that public front door; "Explore DQI" opens the interactive framework wheel. Demo access does not imply a production entitlement. Customers request real-solution access through `dqi@q4it.eu`.
 
 ## 3. System context
 
