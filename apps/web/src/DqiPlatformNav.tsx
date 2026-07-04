@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
 const products = [
-  { id: 'explore', name: 'Explore DQI', description: 'Standards, framework and guided resources', href: import.meta.env.VITE_DQI_EXPLORE_URL || '/dqi-wheel.html', accent: '#d879ff' },
-  { id: 'assess', name: 'DQI Assess', description: 'Measure maturity and prioritise improvements', href: import.meta.env.VITE_DQI_ASSESS_URL || 'https://dqi-assess.onrender.com', accent: '#ffd166' },
+  { id: 'explore', name: 'Explore DQI', description: 'Standards, framework and guided resources', href: import.meta.env.VITE_DQI_EXPLORE_URL || 'https://www.getdqi.com', accent: '#d879ff' },
+  { id: 'assess', name: 'DQI Assess', description: 'Measure maturity and prioritise improvements', href: import.meta.env.VITE_DQI_ASSESS_URL || 'https://dqi-assess-s7sp.onrender.com', accent: '#ffd166' },
   { id: 'enforce', name: 'DQI Enforce', description: 'Apply policy controls to live AI systems', href: import.meta.env.VITE_DQI_ENFORCE_URL || 'https://aiserbisyo.com/platform', accent: '#51e4bb' },
   { id: 'analytics', name: 'DQI Analytics', description: 'Turn governed evidence into audit reporting', href: '/', accent: '#809dff' },
 ] as const;
