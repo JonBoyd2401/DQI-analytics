@@ -5,6 +5,7 @@
 DQI is a connected governance platform for measuring organisational readiness, applying controls to live AI activity and producing defensible evidence. Each product is separately purchasable and independently deployable, while the demonstration exposes the complete journey.
 
 - **GetDQI** is the public front door.
+- **Explore DQI** is the interactive framework and standards explorer.
 - **DQI Assess** measures maturity and establishes a baseline.
 - **DQI Enforce** applies and observes runtime governance.
 - **DQI Analytics** turns governed evidence into traceable reporting.
@@ -16,13 +17,14 @@ The architectural principle is: one customer experience and trust model, multipl
 
 ```mermaid
 flowchart LR
-    Explore["GetDQI<br/>Discover"] --> Assess["DQI Assess<br/>Measure"]
+    Home["GetDQI<br/>Discover"] --> Explore["Explore DQI<br/>Understand"]
+    Explore --> Assess["DQI Assess<br/>Measure"]
     Assess --> Enforce["DQI Enforce<br/>Control"]
     Enforce --> Analytics["DQI Analytics<br/>Explain and evidence"]
     Analytics --> Assess
 ```
 
-A visitor starts at `www.getdqi.com`, enters a product demo, and can move between products using the shared product switcher. Demo access does not imply a production entitlement. Customers request real-solution access through `dqi@q4it.eu`.
+A visitor starts at `www.getdqi.com`, opens the framework explorer or a product demo, and can move between products using the shared product switcher. "DQI Home" returns to the public front door; "Explore DQI" opens the interactive framework wheel. Demo access does not imply a production entitlement. Customers request real-solution access through `dqi@q4it.eu`.
 
 ## 3. System context
 
@@ -64,6 +66,7 @@ The products may remain on separate service hosts during the demo. The shared sh
 | Capability | Owning bounded context |
 |---|---|
 | Public product information and contact | GetDQI |
+| Interactive framework wheel and standards | Explore DQI |
 | Users, organisations and memberships | Platform identity |
 | Plans, payment state, entitlements and quotas | Platform billing |
 | Assessment catalogue, responses and scores | Assess |
@@ -247,4 +250,3 @@ The product switcher is navigation, not authorisation.
 - Represent commercial access as entitlements and limits.
 - Integrate products with contracts and events, not shared database tables.
 - Prefer a modular platform before introducing additional microservices.
-
