@@ -3,5 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { DqiAuditStudio } from './DqiAuditStudio.js';
 import './dqi-studio.css';
 import './refine.css';
+import './legal.css';
+import { LegalNotice } from './LegalNotice.js';
 
-createRoot(document.getElementById('root')!).render(<React.StrictMode><DqiAuditStudio /></React.StrictMode>);
+createRoot(document.getElementById('root')!).render(<React.StrictMode><DqiAuditStudio /><LegalNotice /></React.StrictMode>);
