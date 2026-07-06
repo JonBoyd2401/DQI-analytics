@@ -200,7 +200,7 @@ export function DqiAuditStudio() {
           <DqiPlatformNav />
           <div className="dqi-demo">
             <i />
-            Synthetic audit event store
+            Free trial · synthetic audit event store
           </div>
         </div>
       </nav>
