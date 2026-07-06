@@ -259,7 +259,11 @@
       .pill, .back-link { padding:6px 8px; font-size:10px; }
       main { grid-template-columns:minmax(0,1fr); padding:8px 8px 24px; gap:14px; }
       .visual-card, .detail-card, .matrix-card, .maturity-card, .left-stack, .right-stack { min-width:0; width:100%; max-width:100%; }
-      .left-stack, .right-stack { gap:14px; }
+      .left-stack, .right-stack { display:contents; }
+      .visual-card { order:1; }
+      .detail-card { order:2; }
+      .maturity-card { order:3; }
+      .matrix-card { order:4; }
       .visual-card { padding:10px; min-height:0; overflow:hidden; }
       .controls { gap:7px; }
       .controls > div { gap:6px!important; }
